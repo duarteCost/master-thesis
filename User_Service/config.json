@@ -1,0 +1,5 @@
+{
+  "DEFAULT": {
+    "AUTH_HOST_IP": "localhost"
+  }
+}
