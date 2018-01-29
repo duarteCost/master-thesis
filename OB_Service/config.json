@@ -1,0 +1,10 @@
+{
+  "DEFAULT": {
+    "AUTH_HOST_IP": "localhost",
+    "USER_HOST_IP": "localhost"
+  },
+
+  "OB": {
+    "OB_API_HOST": "https://apisandbox.openbankproject.com"
+  }
+}
