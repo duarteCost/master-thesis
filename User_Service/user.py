@@ -1,10 +1,9 @@
 import os
 import time
-from functools import wraps
-
 import mongoengine
 import requests
 import sys
+from functools import wraps
 from bson import ObjectId, json_util
 from flask import Flask, request, Response, json
 from flask_cors import CORS
@@ -19,9 +18,6 @@ with open('config.json', 'r') as f:
     config = json.load(f)
 
 AUTH_HOST_IP = config['DEFAULT']['AUTH_HOST_IP']
-
-app = Flask(__name__)
-CORS(app)
 
 
 #decorator
@@ -40,9 +36,8 @@ def Authorization(f):
         return f(*args, **kwargs)
     return wrapper
 
-
-
-
+app = Flask(__name__)
+CORS(app)
 
 @app.route('/', methods=['GET'])
 def welcome_user():
@@ -69,6 +64,9 @@ def create_user():
                         mimetype='application/json')
     elif 'confirm-password' not in request_params:
         return Response(json_util.dumps({'response': 'Missing parameter: confirm password'}), status=404,
+                        mimetype='application/json')
+    elif request_params['password'] !=  request_params['confirm-password']:
+        return Response(json_util.dumps({'response': 'Passwords does not match'}), status=404,
                         mimetype='application/json')
 
     name = request_params['name']

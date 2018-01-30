@@ -5,6 +5,8 @@
   },
 
   "OB": {
-    "OB_API_HOST": "https://apisandbox.openbankproject.com"
+    "OB_API_HOST" : "https://psd2-api.openbankproject.com/",
+    "CONSUMER_KEY" : "cbzhef0wpc0so2um0c5lfs5hzpdvks45ysothv0t",
+    "API_VERSION" : "v3.0.0"
   }
 }
