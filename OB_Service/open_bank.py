@@ -63,12 +63,34 @@ def DirectLogin(f):
                                              'Content-Type': 'application/json'}).content
 
                 token = json.loads(response.decode('utf-8'))
-                kwargs['user_ob_token'] = token
+                dl_token = token['token']
+                dl_token = "DirectLogin token=" + dl_token
+                kwargs['user_ob_token'] = dl_token
         except errors.ServerSelectionTimeoutError:
             return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=500,
                             mimetype='application/json')
         return f(*args, **kwargs)
     return wrapper
+
+def set_baseurl_apiversion():
+
+    obp.setBaseUrl(OB_API_HOST)
+    obp.setApiVersion(API_VERSION)
+
+
+def get_bank_and_account(dl_token):
+
+    # --------------------------- 2º fase --------------------------------------------------------------------
+    banks = obp.getBanks(dl_token)
+    # just picking first bank
+    our_bank = banks[0]['id']
+
+    accounts = obp.getPrivateAccounts(our_bank, dl_token)
+    # just picking first account
+    our_account = accounts[0]['id']
+    # --------------------------------------------------------------------------------------------------------
+    data = {'our_bank':our_bank, 'our_account': our_account}
+    return data
 
 app = Flask(__name__)
 CORS(app)
@@ -82,7 +104,7 @@ def create_user(**kwargs):
     request_params = request.form
     print(request_params)
     if 'username' not in request_params:
-        return Response(json_util.dumps({'response': 'Missing parameter: name'}), status=404,
+        return Response(json_util.dumps({'response': 'Missing parameter: username'}), status=404,
                         mimetype='application/json')
     elif 'email' not in request_params:
         return Response(json_util.dumps({'response': 'Missing parameter: email'}), status=404,
@@ -120,7 +142,6 @@ def create_user(**kwargs):
         # catastrophic error. bail.
         return Response(json_util.dumps({'response': str(err)}), status=404,
                         mimetype='application/json')
-        sys.exit(1)
     print(response)
     response = json.loads(response.decode('utf-8'))
     if 'error' in response:
@@ -144,10 +165,33 @@ def create_user(**kwargs):
     return Response(json_util.dumps({'response': 'Same error occurred!'}), status=404,
                     mimetype='application/json')
 
-@app.route('/ob/payment', methods=['POST'])
+
+# ob routes, this routes correspond to the payment
+
+
+
+@app.route('/ob/payment/charge', methods=['GET'])
 @Authorization
 @DirectLogin
-def get_ob_auth(**kwargs):
+def get_charge(**kwargs):
+    dl_token = kwargs['user_ob_token']
+    set_baseurl_apiversion()
+    data = get_bank_and_account(dl_token)
+    our_bank = data['our_bank']
+    our_account = data['our_account']
+
+    challenge_types = obp.getChallengeTypes(our_bank, our_account, dl_token)
+    charge = challenge_types[0]['charge']
+    response = {'charge': charge}
+    return Response(json_util.dumps({'response': response}), status=200,
+                    mimetype='application/json')
+
+
+
+@app.route('/ob/payment/initiateTransactionRequest', methods=['POST'])
+@Authorization
+@DirectLogin
+def payment_initialization(**kwargs):
     request_params = request.form
     print(request_params)
     if 'currency' not in request_params:
@@ -157,64 +201,71 @@ def get_ob_auth(**kwargs):
         return Response(json_util.dumps({'response': 'Missing parameter: amount'}), status=404,
                         mimetype='application/json')
 
+    # merchant bank details
     cp_bank = "psd201-bank-x--uk"
     cp_account = "2018"
+
+
     OUR_CURRENCY = request_params['currency']
     OUR_VALUE_LARGE = request_params['amount']
-    dl_token = kwargs['user_ob_token']['token']
-    dl_token = "DirectLogin token="+dl_token
-
-    obp.setBaseUrl(OB_API_HOST)
-    obp.setApiVersion(API_VERSION)
     obp.setPaymentDetails(OUR_CURRENCY, OUR_VALUE_LARGE)
 
-    banks = obp.getBanks(dl_token)
-    our_bank = banks[0]['id']
-    print("our bank: {0}".format(our_bank))
 
-    accounts = obp.getPrivateAccounts(our_bank ,dl_token)
-
-    for a in accounts:
-        print(a['id'])
-
-    # just picking first account
-    our_account = accounts[0]['id']
-
+    dl_token = kwargs['user_ob_token']
+    set_baseurl_apiversion()
+    data = get_bank_and_account(dl_token)
+    our_bank = data['our_bank']
+    our_account = data['our_account']
 
 
     challenge_types = obp.getChallengeTypes(our_bank, our_account, dl_token)
-    print(challenge_types)
-    challenge_type = challenge_types[0]
+    challenge_type = challenge_types[0]['type']
+
     initiate_response = obp.initiateTransactionRequest(our_bank, our_account, challenge_type, cp_bank, cp_account,dl_token)
     print(initiate_response)
     if "error" in initiate_response:
         return Response(json_util.dumps({'response': 'Got an error: ' + str(initiate_response)}), status=404,
                         mimetype='application/json')
 
-    if (initiate_response['challenge'] != None):
-        # we need to answer the challenge
-        challenge_query = initiate_response['challenge']['id']
-        transaction_req_id = initiate_response['id']['value']
-
-        challenge_response = obp.answerChallenge(our_bank, our_account, transaction_req_id, challenge_query, dl_token)
-        if "error" in challenge_response:
-            return Response(json_util.dumps({'response': 'Got an error: ' + str(challenge_response)}), status=404,
-                            mimetype='application/json')
+    return Response(json_util.dumps({'response': initiate_response}), status=200,
+                    mimetype='application/json')
 
 
-        print("Transaction status: {0}".format(challenge_response['status']))
-        return Response(json_util.dumps({'response': challenge_response['status']}), status=404,
+
+
+
+@app.route('/ob/payment/answer_challenge', methods=['POST'])
+@Authorization
+@DirectLogin
+def payment_answer_challenge(**kwargs):
+    request_params = request.form
+    print(request_params)
+    if 'transaction_req_id' not in request_params:
+        return Response(json_util.dumps({'response': 'Missing parameter: transaction_req_id'}), status=404,
                         mimetype='application/json')
-    else:
-        # There was no challenge, transaction was created immediately
-        return Response(json_util.dumps({'response': initiate_response}), status=404,
+    elif 'challenge_query' not in request_params:
+        return Response(json_util.dumps({'response': 'Missing parameter: challenge_query'}), status=404,
                         mimetype='application/json')
 
+    transaction_req_id = request_params['transaction_req_id']
+    challenge_query = request_params['challenge_query']
 
+    dl_token = kwargs['user_ob_token']
+    set_baseurl_apiversion()
+    data = get_bank_and_account(dl_token)
+    our_bank = data['our_bank']
+    our_account = data['our_account']
 
+    challenge_response = obp.answerChallenge(our_bank, our_account, transaction_req_id, challenge_query, dl_token)
+    if "error" in challenge_response:
+        return Response(json_util.dumps({'response': 'Got an error: ' + str(challenge_response)}), status=404,
+                        mimetype='application/json')
 
+    print("Transaction status: {0}".format(challenge_response['status']))
+    return Response(json_util.dumps({'response': challenge_response['status']}), status=404,
+                    mimetype='application/json')
 
-
+# end of payment routs
 
 
 

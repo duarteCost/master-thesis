@@ -87,45 +87,6 @@ def create_user():
                         mimetype='application/json')
 
 
-@app.route('/user/all', methods=['GET'])
-@Authorization
-# Handler for HTTP GET - "/user/all"
-def get_user(**kwargs):
-    print(kwargs['payload'])
-    try:
-        users = mongodb.find({})
-        if users is None:
-            return Response(json_util.dumps({'response': 'No users found'}),
-                            status=500, mimetype='application/json')
-        else:
-            return Response(json_util.dumps(users), status=200,
-                            mimetype='application/json')
-    except errors.ServerSelectionTimeoutError:
-        return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=500,
-                        mimetype='application/json')
-
-
-
-
-
-#find corrent user
-@app.route('/user/<string:user_id>', methods=['GET'])
-@Authorization
-# Handler for HTTP GET - "/user/all"
-def get_current_user(user_id, **kwargs):
-    print(kwargs['payload'])
-    try:
-        users = mongodb.find_one({'_id': ObjectId(user_id)})
-        if users is None:
-            return Response(json_util.dumps({'response': 'No user found'}),
-                            status=500, mimetype='application/json')
-        else:
-            return Response(json_util.dumps(users), status=200,
-                            mimetype='application/json')
-    except errors.ServerSelectionTimeoutError:
-        return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=500,
-                        mimetype='application/json')
-
 @app.route('/user/login', methods=['POST'])
 # Handler for HTTP POST - "/user/login"
 def login_user():
@@ -167,6 +128,48 @@ def login_user():
     token = response.decode("utf-8")
     return Response(json_util.dumps({'response': 'Successful operation', 'token': token}), status=200,
                     mimetype='application/json')
+
+
+@app.route('/user/all', methods=['GET'])
+@Authorization
+# Handler for HTTP GET - "/user/all"
+def get_user(**kwargs):
+    print(kwargs['payload'])
+    try:
+        users = mongodb.find({})
+        if users is None:
+            return Response(json_util.dumps({'response': 'No users found'}),
+                            status=500, mimetype='application/json')
+        else:
+            return Response(json_util.dumps(users), status=200,
+                            mimetype='application/json')
+    except errors.ServerSelectionTimeoutError:
+        return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=500,
+                        mimetype='application/json')
+
+
+
+
+
+#find corrent user
+@app.route('/user/<string:user_id>', methods=['GET'])
+@Authorization
+# Handler for HTTP GET - "/user/all"
+def get_current_user(user_id, **kwargs):
+    print(kwargs['payload'])
+    try:
+        users = mongodb.find_one({'_id': ObjectId(user_id)})
+        if users is None:
+            return Response(json_util.dumps({'response': 'No user found'}),
+                            status=500, mimetype='application/json')
+        else:
+            return Response(json_util.dumps(users), status=200,
+                            mimetype='application/json')
+    except errors.ServerSelectionTimeoutError:
+        return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=500,
+                        mimetype='application/json')
+
+
 
 
 
