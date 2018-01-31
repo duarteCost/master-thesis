@@ -261,9 +261,12 @@ def payment_answer_challenge(**kwargs):
         return Response(json_util.dumps({'response': 'Got an error: ' + str(challenge_response)}), status=404,
                         mimetype='application/json')
 
-    print("Transaction status: {0}".format(challenge_response['status']))
-    return Response(json_util.dumps({'response': challenge_response['status']}), status=404,
+
+    print("Transaction status: {0}".format(challenge_response))
+    return Response(json_util.dumps({'response': challenge_response}), status=404,
                     mimetype='application/json')
+
+
 
 # end of payment routs
 
