@@ -49,6 +49,7 @@ def DirectLogin(f):
         payload = kwargs['payload'];
         try:
             user_ob_account = mongodb.find_one({'user_id': ObjectId(payload)})
+            print(user_ob_account)
             if user_ob_account is None:
                 return Response(json_util.dumps(
                     {'response': 'You have not registered your open bank account yet on our platform.'}),
@@ -79,15 +80,20 @@ def set_baseurl_apiversion():
 
 
 def get_bank_and_account(dl_token):
+    user = obp.getCurrentUser(dl_token)
+    print(user)
 
     # --------------------------- 2º fase --------------------------------------------------------------------
-    banks = obp.getBanks(dl_token)
+    data = obp.all_accounts(dl_token)
+    #banks = obp.getBanks(dl_token)
+    print(data)
     # just picking first bank
-    our_bank = banks[0]['id']
+    our_bank = data[0]['our_bank']
 
-    accounts = obp.getPrivateAccounts(our_bank, dl_token)
+    #accounts = obp.getPrivateAccounts(our_bank, dl_token)
+    #print(accounts)
     # just picking first account
-    our_account = accounts[0]['id']
+    our_account = data[0]['our_account']
     # --------------------------------------------------------------------------------------------------------
     data = {'our_bank':our_bank, 'our_account': our_account}
     return data
