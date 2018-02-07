@@ -151,7 +151,7 @@ def create_user(**kwargs):
     print(response)
     response = json.loads(response.decode('utf-8'))
     if 'error' in response:
-        return Response(json_util.dumps({'error': response['error']}), status=500, mimetype='application/json')
+        return Response(json_util.dumps({'response': response['error']}), status=500, mimetype='application/json')
 
     elif 'token' in response:
         try:
@@ -172,9 +172,31 @@ def create_user(**kwargs):
                     mimetype='application/json')
 
 
+#get current user
+
+@app.route('/ob/current-user', methods=['GET'])
+@Authorization
+# Handler for HTTP GET - "/user/all"
+def get_current_ob_user(**kwargs):
+    print(kwargs['payload'])
+    payload = kwargs['payload'];  # user id
+    try:
+        user = mongodb.find_one({'user_id': ObjectId(payload)})
+        if user is None:
+            return Response(json_util.dumps({'response': 'No user found'}),
+                            status=404, mimetype='application/json')
+        else:
+            return Response(json_util.dumps(user), status=200,
+                            mimetype='application/json')
+    except errors.ServerSelectionTimeoutError:
+        return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=500,
+                        mimetype='application/json')
+
+
+
+
+
 # ob routes, this routes correspond to the payment
-
-
 
 @app.route('/ob/payment/charge', methods=['GET'])
 @Authorization

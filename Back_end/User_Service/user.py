@@ -103,8 +103,11 @@ def login_user():
     email = request_params['email']
 
     existing_user = mongodb.find_one({'email': email})
-    if existing_user is None and check_password_hash(existing_user['password'], password):
-        return Response(json_util.dumps({'response': 'Invalid username/password supplied'}), status=404,
+    if existing_user is None:
+        return Response(json_util.dumps({'response': 'Invalid email.'}), status=404,
+                        mimetype='application/json')
+    elif check_password_hash(existing_user['password'], password) is False:
+        return Response(json_util.dumps({'response': 'Invalid password.'}), status=404,
                         mimetype='application/json')
 
 
