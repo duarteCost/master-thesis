@@ -1,0 +1,86 @@
+function verify_login() {
+    if(!verifyLogin()){
+        location.replace('user-login.html');
+        alert('You need to be logged in to access page');
+        return false
+    }
+    return true
+}
+
+$(document).ready(function () {
+    $.support.cors = true;
+    if(verify_login())
+    {
+        $.ajax({
+            method: "GET",
+            url: "http://127.0.0.1:5002/ob/current-user",
+            beforeSend: function (xhr) {
+                /* Authorization header */
+                xhr.setRequestHeader("Authorization", getCookie("token"));
+            },
+            success: function (data) {
+                console.log('Success.');
+                $("#show-open-bank-user").append("<h2><label>You are already associated with open bank!</label></h2>");
+                $("#show-open-bank-user").append("<br>");
+                $("#show-open-bank-user").append("<ul>");
+                $("#show-open-bank-user").append("<li id ='ob-list-active' style='background-color: #333; color:rgb(246,255,255);'><label>Your accont data:</label></li>");
+                $("#show-open-bank-user").append("<li> <label><span class=\"glyphicon glyphicon-user span-customized-ob\"></span> Email: <span class='span-customized-ob'>"+' '+data.email+"</span></label></li>");
+                $("#show-open-bank-user").append("<li><label><span class=\"glyphicon glyphicon-user span-customized-ob\"></span> Open Bank Username:<span class='span-customized-ob'>"+' '+data.username+"</span></label></li>");
+                $("#show-open-bank-user").append("</ul>");
+
+            },
+            error: function (data) {
+                console.log(data);
+                if (data.responseJSON != undefined) {
+                    if(data.responseJSON.response === "No user found")
+                    {
+                        $('#associate_ob_account').css({"display":"block"});
+                    }
+                }
+                else
+                {
+                    alert("Our server is unavailable. Try access later!");
+                    location.replace('index.html')
+                }
+
+
+            }
+        });
+    };
+
+
+
+
+
+
+
+    //Register Form Handler
+    $('#open-bank-register-form').submit(function signup(e){
+        e.preventDefault();
+
+        if(!validateEmail() || !validatePassword()){
+            console.log("Account information invalid")
+            return;
+        }
+        $.ajax({
+            method: "POST",
+            url: "http://127.0.0.1:5002/ob/register",
+            data: $(this).serializeArray(),
+            beforeSend: function (xhr) {
+                /* Authorization header */
+                xhr.setRequestHeader("Authorization", getCookie("token"));
+            },
+            success: function (data) {
+                console.log('Submission was successful.');
+                console.log(data);
+                location.replace('open-bank-register.html')
+            },
+            error: function (data) {
+                alert(data.responseJSON.response)
+                $('#open-bank-error-message').html(data.responseJSON.response);
+                console.log('An error occurred.');
+                console.log(data);
+            }
+        })
+    });
+});

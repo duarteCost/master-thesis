@@ -216,7 +216,7 @@ def get_charge(**kwargs):
 
 
 
-@app.route('/ob/payment/initiateTransactionRequest', methods=['POST'])
+@app.route('/ob/payment/initiate-transaction-request', methods=['POST'])
 @Authorization
 @DirectLogin
 def payment_initialization(**kwargs):
@@ -262,7 +262,7 @@ def payment_initialization(**kwargs):
 
 
 
-@app.route('/ob/payment/answer_challenge', methods=['POST'])
+@app.route('/ob/payment/answer-challenge', methods=['POST'])
 @Authorization
 @DirectLogin
 def payment_answer_challenge(**kwargs):
@@ -291,7 +291,7 @@ def payment_answer_challenge(**kwargs):
 
 
     print("Transaction status: {0}".format(challenge_response))
-    return Response(json_util.dumps({'response': challenge_response}), status=404,
+    return Response(json_util.dumps({'response': challenge_response}), status=200,
                     mimetype='application/json')
 
 
