@@ -20,11 +20,10 @@ $(document).ready(function () {
             },
             success: function (data) {
                 console.log('Success.');
-                $("#show-open-bank-user").append("<h2><label>You are already associated with open bank!</label></h2>");
+                $("#show-open-bank-user").append("<h2><label>You have already associated your open bank account!</label></h2>");
                 $("#show-open-bank-user").append("<br>");
                 $("#show-open-bank-user").append("<ul>");
-                $("#show-open-bank-user").append("<li id ='ob-list-active' style='background-color: #333; color:rgb(246,255,255);'><label>Your accont data:</label></li>");
-                $("#show-open-bank-user").append("<li> <label><span class=\"glyphicon glyphicon-user span-customized-ob\"></span> Email: <span class='span-customized-ob'>"+' '+data.email+"</span></label></li>");
+                $("#show-open-bank-user").append("<li id ='ob-list-active' style='background-color: #333; color:rgb(246,255,255);'><label>Your Open Bank account:</label></li>");
                 $("#show-open-bank-user").append("<li><label><span class=\"glyphicon glyphicon-user span-customized-ob\"></span> Open Bank Username:<span class='span-customized-ob'>"+' '+data.username+"</span></label></li>");
                 $("#show-open-bank-user").append("</ul>");
 
@@ -58,8 +57,9 @@ $(document).ready(function () {
     $('#open-bank-register-form').submit(function signup(e){
         e.preventDefault();
 
-        if(!validateEmail() || !validatePassword()){
+        if(!validatePassword()){
             console.log("Account information invalid")
+            $('#open_bank_error_message').html("Passwords does not match.");
             return;
         }
         $.ajax({
@@ -73,11 +73,11 @@ $(document).ready(function () {
             success: function (data) {
                 console.log('Submission was successful.');
                 console.log(data);
+                alert("Your Open Bank Account has been successfully associated with your Nearsoft Payment Provider account!");
                 location.replace('open-bank-register.html')
             },
             error: function (data) {
-                alert(data.responseJSON.response)
-                $('#open-bank-error-message').html(data.responseJSON.response);
+                $('#open_bank_error_message').html(data.responseJSON.response);
                 console.log('An error occurred.');
                 console.log(data);
             }

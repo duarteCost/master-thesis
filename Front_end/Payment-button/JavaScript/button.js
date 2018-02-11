@@ -21,60 +21,84 @@ function getCookie(cname) {
     return "";
 }
 
-
-function purchase(token) {
-
-
-
-    $.ajax({
+function getCharge(token) {
+    return $.ajax({
         type: "GET",
         url:"http://127.0.0.1:5002/ob/payment/charge" ,
         beforeSend: function (xhr) {
             /* Authorization header */
             xhr.setRequestHeader("Authorization", token);
         }
-    }).done(function (data) {
+    })
+}
+
+function initiate_transaction(token) {
+    var data_serialized = {"amount": getCookie("amount"), "currency": getCookie("currency")};
+    console.log(data_serialized);
+    return $.ajax({
+        type:"POST",
+        url: "http://127.0.0.1:5002/ob/payment/initiate-transaction-request",
+        data:data_serialized,
+        beforeSend: function (xhr) {
+            /* Authorization header */
+            xhr.setRequestHeader("Authorization", token);
+        }
+    })
+}
+
+function answer_challenge(token, data_serialized) {
+    return $.ajax({
+        type: "POST",
+        url: "http://127.0.0.1:5002/ob/payment/answer-challenge",
+        data: data_serialized,
+        beforeSend: function (xhr) {
+            /* Authorization header */
+            xhr.setRequestHeader("Authorization", token);
+        }
+    })
+}
+
+function purchase(token) {
+
+    getCharge(token).done(function (data) {
         console.log(data)
-        alert("This transaction is subject to a fee of: "+data.response.charge);
-        var data_serialized = {"amount": getCookie("amount"), "currency": getCookie("currency")}
-        console.log(data_serialized)
-        $.ajax({
-            type:"POST",
-            url: "http://127.0.0.1:5002/ob/payment/initiate-transaction-request",
-            data:data_serialized,
-            beforeSend: function (xhr) {
-                /* Authorization header */
-                xhr.setRequestHeader("Authorization", token);
-            }
-        }).done(function (data) {
-            console.log(data);
-            if(data.response.status === "INITIATED"){
-                alert("Your purchase is over 1000 €. Do you wish to continue?")
-                var dataSerialized = {"challenge_query": data.response.challenge.id, "transaction_req_id": data.response.id.value}
-                $.ajax({
-                    type: "POST",
-                    url: "http://127.0.0.1:5002/ob/payment/answer-challenge",
-                    data: dataSerialized,
-                    beforeSend: function (xhr) {
-                        /* Authorization header */
-                        xhr.setRequestHeader("Authorization", token);
-                    }
-                }).done(function (data) {
-                    console.log(data)
-                    if(data.response.status == "COMPLETED"){
-                        alert("Purchase made successfully")
+        var continue_operation =confirm("This transaction is subject to a charge of "+data.response.charge+". Do you want to proceed with payment?");
+        if(continue_operation){
+            initiate_transaction(token).done(function (data) {
+                console.log(data);
+                if(data.response.status === "INITIATED"){
+                    var continue_operation =confirm("Your purchase is over 1000 €.  Do you want to proceed with payment?");
+                    if(continue_operation)
+                    {
+                        var data_serialized = {"challenge_query": data.response.challenge.id, "transaction_req_id": data.response.id.value};
+                        answer_challenge(token, data_serialized ).done(function (data) {
+                            console.log(data)
+                            if(data.response.status === "COMPLETED"){
+                                alert("Purchase made successfully!")
+                            }
+                            else
+                            {
+                                alert("Some error occurred.")
+                            }
+                        })
                     }
                     else
                     {
-                        alert("Some error occurred")
+                        alert("Purchase was canceled.");
                     }
-                })
 
-            }
-            else if((data.response.status == "COMPLETED")) {
-                alert("Purchase made successfully")
-            }
-        })
+
+                }
+                else if(data.response.status === "COMPLETED") {
+                    alert("Purchase made successfully!")
+                }
+            })
+        }
+        else
+        {
+            alert("Purchase was canceled.");
+        }
+
     })
 }
 
@@ -118,7 +142,16 @@ $( document ).ready(function() {
                 console.log('Submission was successful.');
                 console.log(data);
                 $('#id01').css({"display":"none"})
-                purchase(data.token)
+                var continue_operation = confirm("Login successfully. Do you want to proceed with payment?");
+                if(continue_operation)
+                {
+                    purchase(data.token);
+                }
+                else
+                {
+                    alert("Purchase was canceled.");
+                }
+
             },
             error: function (data) {
                 $('#error-message').html('O email e/ou password introduzidos estão incorrectos.');
@@ -126,6 +159,10 @@ $( document ).ready(function() {
                 console.log(data);
             }
         })
+    });
+
+    $('#sing_up').click(function () {
+        window.open("./../Web-app/Pages/user-register.html");
     });
 
 

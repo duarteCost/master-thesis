@@ -17,19 +17,20 @@
 	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
 	<!----------------end of bootstrap -------------------->
 </head>
-<body style = 'background-color: black; color: blue; text-align: center'> 
+<body style = 'background-color: black;  text-align: center'>
 	
-	<h2 id = "h2">Welcome to NearAmazon</h2>
+	<h2 style="color: whitesmoke;" id = "h2">Welcome to NearAmazon</h2>
 	<br>
 	<br>
-	<div id = "productsContainer" style = 'background-color: #EEEEEE; width:50%; height: auto; margin-left: 25%; border-radius: 10%; '>
+	<div id = "productsContainer" style = 'background-color: #EEEEEE; width:50%; height: auto; margin-left: 25%; border-radius: 10%; font-size: 140%; font-weight: bold'>
 		
 		<div class = "productElement">
 			<form action = "http://127.0.0.1:5002/ob/payment/initiate-transaction-request"  class = "productsForm">
 				<img src="https://s-media-cache-ak0.pinimg.com/originals/c1/63/c7/c163c7638bf81b0aee95ec283b3373d3.jpg" style='width:20%; height:20%'>
 				<input class="amount" type="hidden" name="amount" value="1001">
 				<input class="currency" type="hidden" name="currency" value="EUR">
-				<p>Necklace pearls-1001€</p>
+				<p>Necklace pearls</p>
+				<p>Price: 1001</p>
 			</form>
 			<br>
 		</div>
@@ -38,7 +39,8 @@
 				<img src="https://primetag2.azureedge.net/media/attachment_photos/2017/02/10/thumbs/1917534996543.750x750_q85_crop-scale.png" style='width:20%; height:20%'>
 				<input class="amount" type="hidden" name="amount" value="1">
 				<input class="currency" type="hidden" name="currency" value="EUR">
-				<p>Glasses- 1€</p>
+				<p>Glasses</p>
+				<p>Price: 1</p>
 			</form>
 			<br>
 		</div>
@@ -80,7 +82,7 @@
 			<div class="modal-footer">
 
 				<div class="pull-left"><button type="button" onclick="document.getElementById('id01').style.display='none'" class="cancelbtn">Cancel</button></div>
-				<p>Don't have an account?<a href="./../Web-app/Pages/user-register.html"> Sign up here</a></p><br>
+				<p>Don't have an account?<a id = "sing_up"> Sign up here</a></p><br>
 			</div>
 		</div>
 	</div>

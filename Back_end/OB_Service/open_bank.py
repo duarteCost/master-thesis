@@ -112,9 +112,6 @@ def create_user(**kwargs):
     if 'username' not in request_params:
         return Response(json_util.dumps({'response': 'Missing parameter: username'}), status=404,
                         mimetype='application/json')
-    elif 'email' not in request_params:
-        return Response(json_util.dumps({'response': 'Missing parameter: email'}), status=404,
-                        mimetype='application/json')
     elif 'password' not in request_params:
         return Response(json_util.dumps({'response': 'Missing parameter: password'}), status=404,
                         mimetype='application/json')
@@ -127,7 +124,7 @@ def create_user(**kwargs):
 
     username = request_params['username']
     password = request_params['password']
-    email = request_params['email']
+    print("okey")
 
 
     try:
@@ -158,7 +155,7 @@ def create_user(**kwargs):
             mongoengine.connect(db='PISP_OB_UserDB', host='localhost', port=27017)
             #future work, implementation of email confirmation mecanisme
 
-            Ob_account(ObjectId(), email, password, username, ObjectId(payload)).save()
+            Ob_account(ObjectId(), password, username, ObjectId(payload)).save()
             return Response(json_util.dumps({'response': 'Successful registration with your open bank account.'}),
                             status=200, mimetype='application/json')
         except (errors.DuplicateKeyError, mongoengine.errors.NotUniqueError):
