@@ -20,11 +20,13 @@ $(document).ready(function () {
             },
             success: function (data) {
                 console.log('Success.');
+                console.log(data);
                 $("#show-open-bank-user").append("<h2><label>You have already associated your open bank account!</label></h2>");
                 $("#show-open-bank-user").append("<br>");
                 $("#show-open-bank-user").append("<ul>");
-                $("#show-open-bank-user").append("<li id ='ob-list-active' style='background-color: #333; color:rgb(246,255,255);'><label>Your Open Bank account:</label></li>");
-                $("#show-open-bank-user").append("<li><label><span class=\"glyphicon glyphicon-user span-customized-ob\"></span> Open Bank Username:<span class='span-customized-ob'>"+' '+data.username+"</span></label></li>");
+                $("#show-open-bank-user").append("<li id ='ob-list-active' style='background-color: #333; color:rgb(246,255,255);'><label>Your account data:</label></li>");
+                $("#show-open-bank-user").append("<li><label><span class=\"glyphicon glyphicon-user span-customized-ob\"></span> Name:<span class='span-customized-ob'>"+' '+data.response.name+' '+data.response.surname+"</span></label></li>");
+                $("#show-open-bank-user").append("<li><label><span class=\"glyphicon glyphicon-user span-customized-ob\"></span> Email:<span class='span-customized-ob'>"+' '+data.response.email+"</span></label></li>");
                 $("#show-open-bank-user").append("</ul>");
 
             },

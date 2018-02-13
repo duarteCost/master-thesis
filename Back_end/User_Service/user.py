@@ -25,11 +25,11 @@ def Authorization(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
         token = request.headers.get('Authorization')
-        response_bytes = requests.get('http://'+AUTH_HOST_IP+':5000/authorization', headers={'Authorization': token}).content
+        response_bytes = requests.get('http://'+AUTH_HOST_IP+':5000/authorization', headers={'Authorization': token}).content #Verifies in Auth_Service if the token is valid and returns the payload(user_id)
         response = response_bytes.decode("utf-8")
         error_message = 'Invalid token.'
         if response != error_message:
-            kwargs['payload'] = response
+            kwargs['payload'] = response #save the payload(user_id) in kwargs array
         else:
             return Response(json_util.dumps({'response': 'Invalid token! Please refresh log in.'}), status=404,
                             mimetype='application/json')

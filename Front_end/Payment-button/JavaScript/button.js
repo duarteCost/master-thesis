@@ -21,6 +21,7 @@ function getCookie(cname) {
     return "";
 }
 
+// Get the transaction charge
 function getCharge(token) {
     return $.ajax({
         type: "GET",
@@ -32,6 +33,7 @@ function getCharge(token) {
     })
 }
 
+//The transaction is initiated and the result can be the concluded status or initiated all depends the transaction amount
 function initiate_transaction(token) {
     var data_serialized = {"amount": getCookie("amount"), "currency": getCookie("currency")};
     console.log(data_serialized);
@@ -46,6 +48,7 @@ function initiate_transaction(token) {
     })
 }
 
+//In case of transaction status is initiated its necessary answer one challenge
 function answer_challenge(token, data_serialized) {
     return $.ajax({
         type: "POST",
@@ -60,12 +63,15 @@ function answer_challenge(token, data_serialized) {
 
 function purchase(token) {
 
+    //first get charge and wait for the conclusion of operatio
     getCharge(token).done(function (data) {
-        console.log(data)
+        console.log(data);
         var continue_operation =confirm("This transaction is subject to a charge of "+data.response.charge+". Do you want to proceed with payment?");
         if(continue_operation){
+            //initialize the transaction and wait for result
             initiate_transaction(token).done(function (data) {
                 console.log(data);
+                //If status is initiated is necessary answer the challenge
                 if(data.response.status === "INITIATED"){
                     var continue_operation =confirm("Your purchase is over 1000 €.  Do you want to proceed with payment?");
                     if(continue_operation)
@@ -89,6 +95,7 @@ function purchase(token) {
 
 
                 }
+                //if the transaction status is completed the its done
                 else if(data.response.status === "COMPLETED") {
                     alert("Purchase made successfully!")
                 }
@@ -107,14 +114,14 @@ function purchase(token) {
 
 $( document ).ready(function() {
 
+    //add button and button css
     $(".productsForm").append('<button onclick="document.getElementById(\'id01\').style.display=\'block\'" type="submit" class = "buyNow" style="vertical-align:middle"><span>Buy Now</span></button>');
-
-
     $("head").append($("<link rel='stylesheet' href='css/style.css' type='text/css' media='screen' />"));
 
 
 
 
+    //When user click buy now
 	$('.productsForm').submit(function (e) {
         e.preventDefault();
         var values = $(this).serializeArray();
@@ -126,12 +133,14 @@ $( document ).ready(function() {
         console.log(amount);
         console.log(currency);
 
-        setCookie('amount', amount, 0.001);
-        setCookie('currency', currency, 0.001);
+        //Save the form values to verify first the user login
+        setCookie('amount', amount, 0.01);
+        setCookie('currency', currency, 0.01);
 
     });
 
 
+    //When the user login
     $('#login-form').submit(function signup(e){
         e.preventDefault();
         $.ajax({
@@ -145,7 +154,7 @@ $( document ).ready(function() {
                 var continue_operation = confirm("Login successfully. Do you want to proceed with payment?");
                 if(continue_operation)
                 {
-                    purchase(data.token);
+                    purchase(data.token); //Success operation, proceed with the payment
                 }
                 else
                 {
@@ -162,7 +171,7 @@ $( document ).ready(function() {
     });
 
     $('#sing_up').click(function () {
-        window.open("./../Web-app/Pages/user-register.html");
+        window.open("./../Web-app/Pages/user-register.html"); //Go to the register form
     });
 
 
