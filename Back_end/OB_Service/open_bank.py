@@ -2,6 +2,8 @@ import os
 import time
 import mongoengine
 import requests
+import ssl
+import urllib3
 from functools import wraps
 from bson import ObjectId, json_util
 from flask import Flask, request, Response, json
@@ -14,6 +16,8 @@ obp = Lib.obp
 
 mongodb = MongoClient('localhost', 27017).PISP_OB_UserDB.ob_account
 time.sleep(5)
+
+context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
 
 
 # data from configuration file
@@ -32,7 +36,7 @@ def Authorization(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
         token = request.headers.get('Authorization')
-        response_bytes = requests.get('http://'+AUTH_HOST_IP+':5000/authorization', headers={'Authorization': token}).content #Verifies in Auth_Service if the token is valid and returns the payload(user_id)
+        response_bytes = requests.get('https://'+AUTH_HOST_IP+':5000/authorization', headers={'Authorization': token},verify=False).content #Verifies in Auth_Service if the token is valid and returns the payload(user_id)
         response = response_bytes.decode("utf-8")
         error_message = 'Invalid token.'
         if response != error_message:
@@ -121,6 +125,14 @@ app = Flask(__name__)
 CORS(app)
 
 
+
+@app.route('/', methods=['GET'])
+def welcome_ob():
+    return Response(json_util.dumps({'response': 'Welcome Open Bank Micro Service'}), status=200,
+                    mimetype='application/json')
+
+
+
 @app.route('/ob/register', methods=['POST'])
 @Authorization
 # Handler for HTTP Post - "/ob/register"
@@ -205,8 +217,8 @@ def get_current_ob_user(**kwargs):
                             status=404, mimetype='application/json')
         else:
             #Get other user credentials from the User_Service
-            response_bytes = requests.get('http://' + USER_HOST_IP + ':5001/user/'+payload,
-                                          headers={'Authorization': token}).content
+            response_bytes = requests.get('https://' + USER_HOST_IP + ':5001/user/'+payload,
+                                          headers={'Authorization': token}, verify=False).content
             response = json.loads(response_bytes.decode("utf-8"))
             print(response)
             return Response(json_util.dumps({'response': response}), status=200,
@@ -325,5 +337,7 @@ def payment_answer_challenge(**kwargs):
 
 
 if __name__ == '__main__':
+    context.load_cert_chain('./Certificates/ssl.crt', './Certificates/ssl.key')
+    requests.packages.urllib3.disable_warnings()
     port = int(os.environ.get('PORT', 5002))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(host='0.0.0.0', port=port, debug=True, ssl_context=context)

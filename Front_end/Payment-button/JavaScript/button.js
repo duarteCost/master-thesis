@@ -25,7 +25,7 @@ function getCookie(cname) {
 function getCharge(token) {
     return $.ajax({
         type: "GET",
-        url:"http://127.0.0.1:5002/ob/payment/charge" ,
+        url:"https://127.0.0.1:5002/ob/payment/charge" ,
         beforeSend: function (xhr) {
             /* Authorization header */
             xhr.setRequestHeader("Authorization", token);
@@ -39,7 +39,7 @@ function initiate_transaction(token) {
     console.log(data_serialized);
     return $.ajax({
         type:"POST",
-        url: "http://127.0.0.1:5002/ob/payment/initiate-transaction-request",
+        url: "https://127.0.0.1:5002/ob/payment/initiate-transaction-request",
         data:data_serialized,
         beforeSend: function (xhr) {
             /* Authorization header */
@@ -52,7 +52,7 @@ function initiate_transaction(token) {
 function answer_challenge(token, data_serialized) {
     return $.ajax({
         type: "POST",
-        url: "http://127.0.0.1:5002/ob/payment/answer-challenge",
+        url: "https://127.0.0.1:5002/ob/payment/answer-challenge",
         data: data_serialized,
         beforeSend: function (xhr) {
             /* Authorization header */
@@ -145,7 +145,7 @@ $( document ).ready(function() {
         e.preventDefault();
         $.ajax({
             method: "POST",
-            url: "http://127.0.0.1:5001/user/login",
+            url: "https://127.0.0.1:5001/user/login",
             data: $(this).serializeArray(),
             success: function (data) {
                 console.log('Submission was successful.');

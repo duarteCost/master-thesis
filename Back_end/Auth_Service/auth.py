@@ -1,6 +1,7 @@
 import datetime
 import jwt
 import os
+import ssl
 from flask import Flask, request
 from flask_cors import CORS
 
@@ -10,7 +11,7 @@ JWT_EXP_DELTA_SECONDS = 120
 
 app = Flask(__name__)
 CORS(app)
-
+context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
 
 # Receives the user id when a login is made and generates a authentication token based on user_id and expiration.
 @app.route('/authentication', methods=['GET'])
@@ -38,5 +39,6 @@ def read_auth_token():
         return 'Invalid token.'
 
 if __name__ == '__main__':
+    context.load_cert_chain('./Certificates/ssl.crt', './Certificates/ssl.key')
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(host='0.0.0.0', port=port, debug=True, ssl_context=context)

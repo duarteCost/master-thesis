@@ -13,7 +13,7 @@ $(document).ready(function () {
     {
         $.ajax({
             method: "GET",
-            url: "http://127.0.0.1:5002/ob/current-user",
+            url: "https://127.0.0.1:5002/ob/current-user",
             beforeSend: function (xhr) {
                 /* Authorization header */
                 xhr.setRequestHeader("Authorization", getCookie("token"));
@@ -66,7 +66,7 @@ $(document).ready(function () {
         }
         $.ajax({
             method: "POST",
-            url: "http://127.0.0.1:5002/ob/register",
+            url: "https://127.0.0.1:5002/ob/register",
             data: $(this).serializeArray(),
             beforeSend: function (xhr) {
                 /* Authorization header */

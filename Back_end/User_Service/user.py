@@ -3,6 +3,7 @@ import time
 import mongoengine
 import requests
 import sys
+import ssl
 from functools import wraps
 from bson import ObjectId, json_util
 from flask import Flask, request, Response, json
@@ -13,6 +14,8 @@ from werkzeug.security import check_password_hash
 
 mongodb = MongoClient('localhost', 27017).PISP_UserDB.user
 time.sleep(5)
+
+context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
 
 with open('config.json', 'r') as f:
     config = json.load(f)
@@ -25,7 +28,7 @@ def Authorization(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
         token = request.headers.get('Authorization')
-        response_bytes = requests.get('http://'+AUTH_HOST_IP+':5000/authorization', headers={'Authorization': token}).content #Verifies in Auth_Service if the token is valid and returns the payload(user_id)
+        response_bytes = requests.get('https://'+AUTH_HOST_IP+':5000/authorization', headers={'Authorization': token}, verify=False).content #Verifies in Auth_Service if the token is valid and returns the payload(user_id)
         response = response_bytes.decode("utf-8")
         error_message = 'Invalid token.'
         if response != error_message:
@@ -114,7 +117,7 @@ def login_user():
 
     # http communication to generate token when user does the login
     try:
-        response = requests.get('http://'+AUTH_HOST_IP+':5000/authentication', headers={'user_id': str(existing_user['_id'])}).content
+        response = requests.get('https://'+AUTH_HOST_IP+':5000/authentication', headers={'user_id': str(existing_user['_id'])}, verify=False).content
     except requests.exceptions.Timeout:
     # Maybe set up for a retry, or continue in a retry loop
         return Response(json_util.dumps({'response': 'Server timeout.'}), status=404,
@@ -177,5 +180,7 @@ def get_current_user(user_id, **kwargs):
 
 
 if __name__ == '__main__':
+    context.load_cert_chain('./Certificates/ssl.crt', './Certificates/ssl.key')
+    requests.packages.urllib3.disable_warnings()
     port = int(os.environ.get('PORT', 5001))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(host='0.0.0.0', port=port, debug=True, ssl_context=context)

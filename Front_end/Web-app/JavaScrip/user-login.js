@@ -30,7 +30,7 @@ $(document).ready(function(){
         e.preventDefault();
         $.ajax({
             method: "POST",
-            url: "http://127.0.0.1:5001/user/login",
+            url: "https://127.0.0.1:5001/user/login",
             data: $(this).serializeArray(),
             success: function (data) {
                 console.log('Submission was successful.');
