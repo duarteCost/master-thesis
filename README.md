@@ -7,19 +7,19 @@ This project is Payment Service Provider using PSD2
 2. Python Flasks
 3. Web browser 
 
-##How to run
+## How to run
 Below I will explain how to run the project
-###BackEnd
+### BackEnd
 1. Fill the configurations files of each one Service
     1. The default variables in all files is about the Services IP address, probably it is not necessary change
     2. In the OB_Service the OB variables is about Open Bank API it is not necessary change
 2. Run MongoDB with the command **mongod --dbpath _YOURDESIREDPATH_**
 3. **Run all of Services** (attention the default HTTP ports is defined in code)
-###FrontEnd
+### FrontEnd
 1. Go to the Front_end/Payment-button/e-coomerce-website-test.html
 2. Open it with web browser
 
-##How to use
+## How to use
 1. In the FrontEnd page, when **click in "Buy Now"** button will appear one login window
 2. In this window **if the user does not have account** must Sign Up on "Sign Up her" link
 3. Then the user must **fill the Sign Up form** and submit
