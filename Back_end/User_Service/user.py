@@ -9,8 +9,10 @@ from bson import ObjectId, json_util
 from flask import Flask, request, Response, json
 from flask_cors import CORS
 from pymongo import MongoClient, errors
+from flasgger import swag_from
 from User_Models.user_model import User
 from werkzeug.security import check_password_hash
+from flasgger import Swagger
 
 mongodb = MongoClient('localhost', 27017).PISP_UserDB.user
 time.sleep(5)
@@ -41,35 +43,57 @@ def Authorization(f):
 
 app = Flask(__name__)
 CORS(app)
+app.config['SWAGGER'] = {
+    'title': 'Nearsoft Payment Provaider (User API)',
+    'description': 'This is User API of Nearsoft Payment Provaider',
+    'uiversion': 2,
+    'email': "duarteafonsocosta@hotmail.com"
+}
+swagger = Swagger(app, template={
+    "info": {
+        "contact": {
+            "email":"duarteafonsocosta@hotmail.com",
+        },
+    },
+    "securityDefinitions":{
+        "Bearer":{
+            "description":"JWT autorization",
+            "type":"apiKey",
+            "name":"Authorization",
+            "in":"header",
+        },
+    },
+},)
 
-@app.route('/', methods=['GET'])
+@app.route('/user/', methods=['GET'])
 def welcome_user():
     return Response(json_util.dumps({'response': 'Welcome User Micro Service'}), status=200,
                     mimetype='application/json')
 
 
 @app.route('/user/register', methods=['POST'])
+@swag_from('API_Definitions/user_register.yml')
 # Handler for HTTP Post - "/user/register"
 def create_user():
     request_params = request.form
     print(request_params)
     if 'name' not in request_params:
-        return Response(json_util.dumps({'response': 'Missing parameter: name'}), status=404,
+        return Response(json_util.dumps({'response': 'Missing parameter: name'}), status=400,
                         mimetype='application/json')
     elif 'surname' not in request_params:
-        return Response(json_util.dumps({'response': 'Missing parameter: surname'}), status=404,
+        return Response(json_util.dumps({'response': 'Missing parameter: surname'}), status=400,
                         mimetype='application/json')
     elif 'email' not in request_params:
-        return Response(json_util.dumps({'response': 'Missing parameter: email'}), status=404,
+        return Response(json_util.dumps({'response': 'Missing parameter: email'}), status=400,
                         mimetype='application/json')
     elif 'password' not in request_params:
-        return Response(json_util.dumps({'response': 'Missing parameter: password'}), status=404,
+        return Response(json_util.dumps({'response': 'Missing parameter: password'}), status=400,
                         mimetype='application/json')
     elif 'confirm-password' not in request_params:
-        return Response(json_util.dumps({'response': 'Missing parameter: confirm password'}), status=404,
+        return Response(json_util.dumps({'response': 'Missing parameter: confirm password'}), status=400,
                         mimetype='application/json')
     elif request_params['password'] !=  request_params['confirm-password']:
-        return Response(json_util.dumps({'response': 'Passwords does not match'}), status=404,
+        return Response(json_util.dumps({'response': 'Passwords does not match'}), status=400,
                         mimetype='application/json')
 
     name = request_params['name']
@@ -84,34 +108,38 @@ def create_user():
                         status=200, mimetype='application/json')
     except (errors.DuplicateKeyError, mongoengine.errors.NotUniqueError):
         return Response(json_util.dumps({'response': 'User already exists'}),
-                        status=404, mimetype='application/json')
+                        status=400, mimetype='application/json')
     except errors.ServerSelectionTimeoutError:
-        return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=500,
+        return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=404,
                         mimetype='application/json')
 
 
 @app.route('/user/login', methods=['POST'])
+@swag_from('API_Definitions/user_login.yml')
 # Handler for HTTP POST - "/user/login"
 def login_user():
     request_params = request.form
     print(request_params)
     if 'email' not in request_params:
-        return Response(json_util.dumps({'response': 'Missing parameter: email'}), status=404, mimetype='application'
+        return Response(json_util.dumps({'response': 'Missing parameter: email'}), status=400, mimetype='application'
                                                                                                         '/json')
     elif 'password' not in request_params:
-        return Response(json_util.dumps({'response': 'Missing parameter: password'}), status=404,
+        return Response(json_util.dumps({'response': 'Missing parameter: password'}), status=400,
                         mimetype='application/json')
 
     password = request_params['password']
     email = request_params['email']
-
-    existing_user = mongodb.find_one({'email': email})
-    if existing_user is None:
-        return Response(json_util.dumps({'response': 'Invalid email.'}), status=404,
-                        mimetype='application/json')
-    elif check_password_hash(existing_user['password'], password) is False:
-        return Response(json_util.dumps({'response': 'Invalid password.'}), status=404,
-                        mimetype='application/json')
+    try:
+        existing_user = mongodb.find_one({'email': email})
+        if existing_user is None:
+            return Response(json_util.dumps({'response': 'Invalid email.'}), status=400,
+                            mimetype='application/json')
+        elif check_password_hash(existing_user['password'], password) is False:
+            return Response(json_util.dumps({'response': 'Invalid password.'}), status=400,
+                            mimetype='application/json')
+    except errors.ServerSelectionTimeoutError:
+        return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=404,
+                    mimetype='application/json')
 
 
 
@@ -158,21 +186,22 @@ def get_user(**kwargs):
 
 
 #find corrent user
-@app.route('/user/<string:user_id>', methods=['GET'])
+@app.route('/user/my/account', methods=['GET'])
 @Authorization
+@swag_from('API_Definitions/user_get_by_id.yml')
 # Handler for HTTP GET - "/user/all"
-def get_current_user(user_id, **kwargs):
-    print(kwargs['payload'])
+def get_current_user(**kwargs):
+    user_id = kwargs['payload']
     try:
         users = mongodb.find_one({'_id': ObjectId(user_id)})
         if users is None:
             return Response(json_util.dumps({'response': 'No user found'}),
-                            status=500, mimetype='application/json')
+                            status=400, mimetype='application/json')
         else:
             return Response(json_util.dumps(users), status=200,
                             mimetype='application/json')
     except errors.ServerSelectionTimeoutError:
-        return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=500,
+        return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=404,
                         mimetype='application/json')
 
 

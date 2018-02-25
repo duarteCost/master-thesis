@@ -1,0 +1,52 @@
+tags:
+- user
+summary: Logs user into the Nearsoft Payment Provider
+operationId: loginUser
+produces:
+- application/json
+- application/xml
+parameters:
+- in: formData
+  name: email
+  description: User's email
+  required: true
+- in: formData
+  name: password
+  description: User's password
+  required: true
+responses:
+  200:
+    description: successful operation
+    schema:
+      $ref: '#/definitions/user_authorization'
+  400:
+    description: Missing or invalid credentials
+    schema:
+      $ref: '#/definitions/error40X'
+  404:
+    description: Bad request
+    schema:
+      $ref: '#/definitions/error40X'
+
+definitions:
+  user_login:
+    type: object
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    xml:
+      name: User
+
+  user_authorization:
+    properties:
+      response:
+        type: string
+      token:
+        type: string
+
+  error40X:
+    properties:
+      response:
+        type: string

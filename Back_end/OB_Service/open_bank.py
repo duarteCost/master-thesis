@@ -116,7 +116,9 @@ def get_bank_and_account(dl_token):
     data = obp.all_accounts(dl_token)
     print(data)
     our_bank = data[0]['our_bank']
+    print(our_bank)
     our_account = data[0]['our_account']
+    print(our_account)
     # --------------------------------------------------------------------------------------------------------
     data = {'our_bank':our_bank, 'our_account': our_account}
     return data

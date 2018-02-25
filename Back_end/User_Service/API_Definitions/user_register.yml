@@ -1,0 +1,64 @@
+tags:
+- user
+summary: Create user account on Nearsoft Payment Provider
+description: Create User.
+operationId: createUser
+produces:
+- application/json
+- application/xml
+parameters:
+- in: formData
+  name: name
+  description: User's name
+  required: true
+- in: formData
+  name: surname
+  description: User's surname
+  required: true
+- in: formData
+  name: email
+  description: User's email
+  required: true
+- in: formData
+  name: password
+  description: User's password
+  required: true
+- in: formData
+  name: Password confirmation
+  description: Confirme password of account
+  required: true
+
+responses:
+  200:
+    description: successful operation
+  400:
+    description: Missing or invalid credentials
+    schema:
+      $ref: '#/definitions/error40X'
+  404:
+    description: Bad request
+    schema:
+      $ref: '#/definitions/error40X'
+
+definitions:
+
+#  user_register:
+#    type: object
+#    properties:
+#      name:
+#        type: string
+#      surname:
+#        type: string
+#      email:
+#        type: string
+#      password:
+#        type: string
+#      confirm-password:
+#        type: string
+#    xml:
+#      name: User
+
+  error40X:
+    properties:
+      response:
+        type: string
