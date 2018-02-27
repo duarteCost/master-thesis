@@ -1,7 +1,11 @@
+Logs user into the Nearsoft Payment Provider
+With this route the user can login in Nearsoft Payment Provaider for an authorization to access others routes where
+authorization is required. If you do not already have an account you can register using the registration route on this
+ page.
+---
 tags:
 - user
-summary: Logs user into the Nearsoft Payment Provider
-operationId: loginUser
+operationId: login
 produces:
 - application/json
 - application/xml

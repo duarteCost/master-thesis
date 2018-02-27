@@ -10,6 +10,8 @@ from flask import Flask, request, Response, json
 from flask_cors import CORS
 from pymongo import MongoClient, errors
 from OB_Models.ob_account_model import Ob_account
+from flasgger import swag_from
+from flasgger import Swagger
 
 import Lib.obp
 obp = Lib.obp
@@ -43,7 +45,7 @@ def Authorization(f):
             kwargs['payload'] = response # save the payload(user_id) in kwargs array
             kwargs['token'] = token
         else:
-            return Response(json_util.dumps({'response': 'Invalid token! Please refresh log in.'}), status=404,
+            return Response(json_util.dumps({'response': 'Invalid or inexistent token! Please log in.'}), status=400,
                             mimetype='application/json')
         return f(*args, **kwargs)
     return wrapper
@@ -90,7 +92,7 @@ def OB_Authorization(f):
             if user_ob_account is None:
                 return Response(json_util.dumps(
                     {'response': 'You have not registered your open bank account yet on our platform.'}),
-                                status=500, mimetype='application/json')
+                                status=400, mimetype='application/json')
             else:
                 # If the user has associated on open bank, your authorization is obtained from db
                 raw_token = user_ob_account['ob_token']
@@ -98,7 +100,7 @@ def OB_Authorization(f):
                 print(dl_token)
                 kwargs['user_ob_token'] = dl_token #save direct login token in kwargs array
         except errors.ServerSelectionTimeoutError:
-            return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=500,
+            return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=404,
                             mimetype='application/json')
         return f(*args, **kwargs)
     return wrapper
@@ -123,8 +125,36 @@ def get_bank_and_account(dl_token):
     data = {'our_bank':our_bank, 'our_account': our_account}
     return data
 
+
 app = Flask(__name__)
 CORS(app)
+app.config['SWAGGER'] = {
+    'title': 'Nearsoft Payment Provaider (PSD2 API)',
+    'description': 'This is PSD2 API of Nearsoft Payment Provaider',
+    'uiversion': 2,
+    'email': "duarteafonsocosta@hotmail.com"
+}
+swagger = Swagger(app, template={
+    "info": {
+        "contact": {
+            "email":"duarteafonsocosta@hotmail.com",
+        },
+    },
+    "schemes": [
+        "http",
+        "https",
+    ],
+    "host": "https://localhost:5002",
+    "basePath": "Nearsoft/PSP/PSD2",  # base bash for blueprint registration
+    "securityDefinitions":{
+        "JWT":{
+            "description":"JWT autorization",
+            "type":"apiKey",
+            "name":"Authorization",
+            "in":"header",
+        },
+    },
+},)
 
 
 
@@ -135,24 +165,25 @@ def welcome_ob():
 
 
 
-@app.route('/ob/register', methods=['POST'])
+@app.route('/ob/associate', methods=['POST'])
 @Authorization
+@swag_from('API_Definitions/ob_associate.yml')
 # Handler for HTTP Post - "/ob/register"
 def create_user(**kwargs):
     payload = kwargs['payload'];   #user id
     request_params = request.form
     print(request_params)
     if 'username' not in request_params:
-        return Response(json_util.dumps({'response': 'Missing parameter: username'}), status=404,
+        return Response(json_util.dumps({'response': 'Missing parameter: username'}), status=400,
                         mimetype='application/json')
     elif 'password' not in request_params:
-        return Response(json_util.dumps({'response': 'Missing parameter: password'}), status=404,
+        return Response(json_util.dumps({'response': 'Missing parameter: password'}), status=400,
                         mimetype='application/json')
     elif 'confirm-password' not in request_params:
-        return Response(json_util.dumps({'response': 'Missing parameter: confirm password'}), status=404,
+        return Response(json_util.dumps({'response': 'Missing parameter: confirm password'}), status=400,
                         mimetype='application/json')
     elif request_params['password'] !=  request_params['confirm-password']:
-        return Response(json_util.dumps({'response': 'Passwords does not match'}), status=404,
+        return Response(json_util.dumps({'response': 'Passwords does not match'}), status=400,
                         mimetype='application/json')
 
     username = request_params['username']
@@ -171,16 +202,16 @@ def create_user(**kwargs):
                         mimetype='application/json')
     except requests.exceptions.TooManyRedirects:
         # Tell the user their URL was bad and try a different one
-        return Response(json_util.dumps({'response': 'Impossible to find url, impossible to test credentials. Try signing up later.'}), status=404,
+        return Response(json_util.dumps({'response': 'Impossible to find url, impossible to test credentials. Try signing up later.'}), status=400,
                         mimetype='application/json')
     except requests.exceptions.RequestException as err:
         # catastrophic error. bail.
-        return Response(json_util.dumps({'response': str(err)}), status=404,
+        return Response(json_util.dumps({'response': str(err)}), status=400,
                         mimetype='application/json')
     print(response)
     response = json.loads(response.decode('utf-8'))
     if 'error' in response:
-        return Response(json_util.dumps({'response': response['error']}), status=500, mimetype='application/json')
+        return Response(json_util.dumps({'response': response['error']}), status=400, mimetype='application/json')
 
     elif 'token' in response:
         ob_token = response['token']
@@ -194,19 +225,20 @@ def create_user(**kwargs):
                             status=200, mimetype='application/json')
         except (errors.DuplicateKeyError, mongoengine.errors.NotUniqueError):
             return Response(json_util.dumps({'response': 'This open bank account already exists.'}),
-                            status=404, mimetype='application/json')
+                            status=400, mimetype='application/json')
         except errors.ServerSelectionTimeoutError:
-            return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=500,
+            return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=404,
                             mimetype='application/json')
 
-    return Response(json_util.dumps({'response': 'Same error occurred!'}), status=404,
+    return Response(json_util.dumps({'response': 'Same error occurred!'}), status=400,
                     mimetype='application/json')
 
 
 #get current user from User_service data through do OB_Service
 
-@app.route('/ob/current-user', methods=['GET'])
+@app.route('/ob/my/account', methods=['GET'])
 @Authorization
+@swag_from('API_Definitions/ob_get_user.yml')
 # Handler for HTTP GET - "/user/current-user"
 def get_current_ob_user(**kwargs):
     payload = kwargs['payload'];  # user id
@@ -219,11 +251,11 @@ def get_current_ob_user(**kwargs):
                             status=404, mimetype='application/json')
         else:
             #Get other user credentials from the User_Service
-            response_bytes = requests.get('https://' + USER_HOST_IP + ':5001/user/'+payload,
+            response_bytes = requests.get('https://' + USER_HOST_IP + ':5001/user/my/account',
                                           headers={'Authorization': token}, verify=False).content
             response = json.loads(response_bytes.decode("utf-8"))
             print(response)
-            return Response(json_util.dumps({'response': response}), status=200,
+            return Response(json_util.dumps({"response":response}), status=200,
                             mimetype='application/json')
     except errors.ServerSelectionTimeoutError:
         return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=500,
@@ -239,6 +271,7 @@ def get_current_ob_user(**kwargs):
 @app.route('/ob/payment/charge', methods=['GET'])
 @Authorization
 @OB_Authorization
+@swag_from('API_Definitions/ob_payment_charge.yml')
 def get_charge(**kwargs):
 
     dl_token = kwargs['user_ob_token'] # Get the user authorization given by the open bank
@@ -259,6 +292,7 @@ def get_charge(**kwargs):
 @app.route('/ob/payment/initiate-transaction-request', methods=['POST'])
 @Authorization
 @OB_Authorization
+@swag_from('API_Definitions/ob_initiate_transaction_request.yml')
 def payment_initialization(**kwargs):
     request_params = request.form
     print(request_params)
@@ -305,6 +339,7 @@ def payment_initialization(**kwargs):
 @app.route('/ob/payment/answer-challenge', methods=['POST'])
 @Authorization
 @OB_Authorization
+@swag_from('API_Definitions/ob_answer_challenge.yml')
 def payment_answer_challenge(**kwargs):
     request_params = request.form
     print(request_params) #body of route

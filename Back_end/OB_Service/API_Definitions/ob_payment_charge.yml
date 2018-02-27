@@ -1,0 +1,52 @@
+Get payment charge
+This route uses the PSD2 and allows to obtain the charge associated with the transaction.
+
+**Authorization is mandatory**
+
+**To get athorization:**
+  1 - [Login](https://localhost:5001/apidocs/#!/user/login)
+  2 - Copy token from response
+  3 - Click on authorize on this page
+  4 - Paste the token into the text input
+---
+tags:
+- PSD2
+security:
+  - JWT: []
+operationId: charge
+produces:
+- application/json
+- application/xml
+responses:
+  200:
+    description: Successful operation
+    schema:
+      $ref: '#/definitions/success_get_charge'
+  400:
+    description: Missing or invalid credentials
+    schema:
+      $ref: '#/definitions/error40X'
+  404:
+    description: Bad request
+    schema:
+      $ref: '#/definitions/error40X'
+
+definitions:
+
+  success_get_charge:
+    properties:
+      response:
+        type: array
+        $ref: '#/definitions/response_get_charge'
+
+  response_get_charge:
+    properties:
+      charge:
+        type: string
+
+
+
+  error40X:
+    properties:
+      response:
+        type: string

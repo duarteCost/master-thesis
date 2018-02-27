@@ -1,0 +1,63 @@
+Associate user with open bank to use PSD2
+Through this route the Nearsoft Payment Provider requires an authorization of the Open Bank to use the PSD2
+(payments, consultations) routes for that user.
+Case the user does not have Open Bank PSD2 SandBox Account must:
+  1 - Sign Up here [Open Bank PSD2 SandBox - Sing Up](https://psd2-api.openbankproject.com/user_mgt/sign_up)
+  2 - After Signed Up the user must create one bank account
+  3 - Now, the user must be fill the association form with Open Bank PSD SandBox credentials
+In this moment the Nearsoft Payment Provider have authorization to do payments for that user
+
+**Authorization is mandatory**
+
+**To get athorization:**
+  1 - [Login](https://localhost:5001/apidocs/#!/user/login)
+  2 - Copy token from response
+  3 - Click on authorize on this page
+  4 - Paste the token into the text input
+---
+tags:
+- PSD2
+security:
+  - JWT: []
+operationId: associate
+produces:
+- application/json
+- application/xml
+parameters:
+- in: formData
+  name: username
+  description: Open Bank Username
+  required: true
+- in: formData
+  name: password
+  description: Open Bank Password
+  required: true
+- in: formData
+  name: confirm-password
+  description: Confirm Open Bank Password
+  required: true
+responses:
+  200:
+    description: Successful association Nearsoft Payment Provaide with Open Bank
+    schema:
+      $ref: '#/definitions/success_registration'
+  400:
+    description: Missing or invalid credentials
+    schema:
+      $ref: '#/definitions/error40X'
+  404:
+    description: Bad request
+    schema:
+      $ref: '#/definitions/error40X'
+
+definitions:
+  success_registration:
+    properties:
+      response:
+        type: string
+
+  error40X:
+    properties:
+      response:
+        type: string
+

@@ -1,8 +1,11 @@
+Create user account on Nearsoft Payment Provider
+Account creation at Nearsoft Payment Provaider to use Nearsoft payment services.
+---
 tags:
 - user
 summary: Create user account on Nearsoft Payment Provider
 description: Create User.
-operationId: createUser
+operationId: register
 produces:
 - application/json
 - application/xml
@@ -30,7 +33,9 @@ parameters:
 
 responses:
   200:
-    description: successful operation
+    description: Successful registration in Nearsoft Payment Provaider
+    schema:
+      $ref: '#/definitions/success'
   400:
     description: Missing or invalid credentials
     schema:
@@ -42,21 +47,10 @@ responses:
 
 definitions:
 
-#  user_register:
-#    type: object
-#    properties:
-#      name:
-#        type: string
-#      surname:
-#        type: string
-#      email:
-#        type: string
-#      password:
-#        type: string
-#      confirm-password:
-#        type: string
-#    xml:
-#      name: User
+  success:
+    properties:
+      response:
+        type: string
 
   error40X:
     properties:

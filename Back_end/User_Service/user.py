@@ -55,8 +55,14 @@ swagger = Swagger(app, template={
             "email":"duarteafonsocosta@hotmail.com",
         },
     },
+    "schemes": [
+        "http",
+        "https",
+    ],
+    "host": "https://localhost:5001",
+    "basePath": "Nearsoft/PSP/User",  # base bash for blueprint registration
     "securityDefinitions":{
-        "Bearer":{
+        "JWT":{
             "description":"JWT autorization",
             "type":"apiKey",
             "name":"Authorization",
@@ -188,7 +194,7 @@ def get_user(**kwargs):
 #find corrent user
 @app.route('/user/my/account', methods=['GET'])
 @Authorization
-@swag_from('API_Definitions/user_get_by_id.yml')
+@swag_from('API_Definitions/user_get_user.yml')
 # Handler for HTTP GET - "/user/all"
 def get_current_user(**kwargs):
     user_id = kwargs['payload']

@@ -1,0 +1,58 @@
+Get account
+Get my Nearsoft Payment Provaider Account.
+
+**Authorization is mandatory**
+
+**To get athorization:**
+  1 - [Login](https://localhost:5001/apidocs/#!/user/login)
+  2 - Copy token from response
+  3 - Click on authorize on this page
+  4 - Paste the token into the text input
+---
+tags:
+- user
+security:
+  - JWT: []
+summary: Get user by user ID
+operationId: my_account
+produces:
+- application/json
+- application/xml
+responses:
+  200:
+    description: Successful operation
+    schema:
+      $ref: '#/definitions/user'
+  400:
+    description: Missing or invalid credentials
+    schema:
+      $ref: '#/definitions/error40X'
+  404:
+    description: Bad request
+    schema:
+      $ref: '#/definitions/error40X'
+
+definitions:
+  user:
+    type: object
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      surname:
+        type: string
+      email:
+        type: string
+      password:
+        type: string
+      modifiedAt:
+        type: string
+        format: date-time
+    xml:
+      name: User
+
+  error40X:
+    properties:
+      response:
+        type: string

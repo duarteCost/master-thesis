@@ -1,0 +1,152 @@
+Answer challenge to conclude transaction
+According to the PSD2 if the transaction amount is exceeds a limit to complete the transaction should be required to
+answer a challenge. If the status of the initialization of the transaction request is INITIATED, it becomes necessary to
+answer a challenge to conclud the transaction. This challenge can be done through this route, using as parameters the
+challenge id and transaction id from route [initiate_transaction_request](https://localhost:5002/apidocs/#!/PSD2/initiate_transaction_request).
+Strong Costomer Authentication can also be added to this PSD2 requirement.
+
+**Authorization is mandatory**
+
+**To get athorization:**
+  1 - [Login](https://localhost:5001/apidocs/#!/user/login)
+  2 - Copy token from response
+  3 - Click on authorize on this page
+  4 - Paste the token into the text input
+---
+tags:
+- PSD2
+security:
+  - JWT: []
+summary: Answer challenge to conclude transaction
+operationId: answer_challenge
+produces:
+- application/json
+- application/xml
+parameters:
+- in: formData
+  name: challenge_query
+  description: Challenge ID of Initiated transaction
+  required: true
+- in: formData
+  name: transaction_req_id
+  description: Transaction request ID of Initiated transaction
+  required: true
+responses:
+  200:
+    description: Successful operation
+    schema:
+      $ref: '#/definitions/success_initiate_transaction'
+  400:
+    description: Missing or invalid credentials
+    schema:
+      $ref: '#/definitions/error40X'
+  404:
+    description: Bad request
+    schema:
+      $ref: '#/definitions/error40X'
+
+definitions:
+
+  success_initiate_transaction:
+    properties:
+      response:
+        type: array
+        $ref: '#/definitions/response_initiate_transaction'
+
+  response_initiate_transaction:
+    properties:
+      id:
+        type: array
+        $ref: '#/definitions/id'
+      type:
+        type: string
+      from:
+        type: array
+        $ref: '#/definitions/from'
+      body:
+        type: array
+        $ref: '#/definitions/body'
+      transaction_ids:
+        type: string
+      status:
+        type: string
+      start_date:
+        type: string
+      end_date:
+        type: string
+      challenge:
+        type: array
+        $ref: '#/definitions/challenge'
+      charge:
+        type: array
+        $ref: '#/definitions/charge'
+
+
+
+
+
+
+  id:
+    properties:
+      value:
+        type: string
+
+  from:
+    properties:
+      bank_id:
+        type: string
+      account_id:
+        type: string
+
+
+  body:
+    properties:
+      to:
+        type: array
+        $ref: '#/definitions/to'
+      value:
+        type: array
+        $ref: '#/definitions/value'
+      description:
+        type: string
+
+  to:
+    properties:
+      bank_id:
+        type: string
+      account_id:
+        type: string
+
+
+  challenge:
+    properties:
+      id:
+        type: string
+      allowed_attempts:
+        type: string
+      challenge_type:
+        type: string
+
+  charge:
+    properties:
+      summary:
+        type: string
+      value:
+        type: array
+        $ref: '#/definitions/value'
+
+
+  value:
+    properties:
+      currency:
+        type: string
+      amount:
+        type: string
+
+
+
+
+  error40X:
+    properties:
+      response:
+        type: string
