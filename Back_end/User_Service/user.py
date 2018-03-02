@@ -23,6 +23,8 @@ with open('config.json', 'r') as f:
     config = json.load(f)
 
 AUTH_HOST_IP = config['DEFAULT']['AUTH_HOST_IP']
+OB_API_HOST = config['OB']['OB_API_HOST']
+CONSUMER_KEY = config['OB']['CONSUMER_KEY']
 
 
 #decorator
@@ -75,6 +77,7 @@ def welcome_user():
                     mimetype='application/json')
 
 
+
 @app.route('/user/register', methods=['POST'])
 @swag_from('API_Definitions/user_register.yml')
 # Handler for HTTP Post - "/user/register"
@@ -107,7 +110,7 @@ def create_user():
 
     try:
         mongoengine.connect(db='PISP_UserDB', host='localhost', port=27017)
-        User(ObjectId(), email, password, name, surname).save()
+        User(ObjectId(), email, password, name, surname, None).save()
         return Response(json_util.dumps({'response': 'Successful operation'}),
                         status=200, mimetype='application/json')
     except (errors.DuplicateKeyError, mongoengine.errors.NotUniqueError):
@@ -169,10 +172,9 @@ def login_user():
 
 
 @app.route('/user/all', methods=['GET'])
-@Authorization
+@swag_from('API_Definitions/user_get_all.yml')
 # Handler for HTTP GET - "/user/all"
-def get_user(**kwargs):
-    print(kwargs['payload'])
+def get_user():
     try:
         users = mongodb.find({})
         if users is None:
@@ -193,7 +195,6 @@ def get_user(**kwargs):
 @app.route('/user/my/account', methods=['GET'])
 @Authorization
 @swag_from('API_Definitions/user_get_user.yml')
-# Handler for HTTP GET - "/user/all"
 def get_current_user(**kwargs):
     user_id = kwargs['payload']
     try:
@@ -204,6 +205,102 @@ def get_current_user(**kwargs):
         else:
             return Response(json_util.dumps(users), status=200,
                             mimetype='application/json')
+    except errors.ServerSelectionTimeoutError:
+        return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=404,
+                        mimetype='application/json')
+
+
+@app.route('/user/obp/associate', methods=['POST'])
+@Authorization
+@swag_from('API_Definitions/user_obp_associate.yml')
+def obp_associate_user(**kwargs):
+    payload = kwargs['payload'];  # user id
+    request_params = request.form
+    print(request_params)
+    if 'username' not in request_params:
+        return Response(json_util.dumps({'response': 'Missing parameter: username'}), status=400,
+                        mimetype='application/json')
+    elif 'password' not in request_params:
+        return Response(json_util.dumps({'response': 'Missing parameter: password'}), status=400,
+                        mimetype='application/json')
+    elif 'confirm-password' not in request_params:
+        return Response(json_util.dumps({'response': 'Missing parameter: confirm password'}), status=400,
+                        mimetype='application/json')
+    elif request_params['password'] != request_params['confirm-password']:
+        return Response(json_util.dumps({'response': 'Passwords does not match'}), status=400,
+                        mimetype='application/json')
+
+    username = request_params['username']
+    password = request_params['password']
+
+    try:
+        # Obtain authorization to use the psd2 routes for that user
+        response = requests.post(OB_API_HOST + '/my/logins/direct',
+                                 headers={
+                                     'Authorization': 'DirectLogin username=' + username + ', password=' + password + ', consumer_key=' + CONSUMER_KEY,
+                                     'Content-Type': 'application/json'}).content
+
+    except requests.exceptions.Timeout:
+        # Maybe set up for a retry, or continue in a retry loop
+        return Response(
+            json_util.dumps({'response': 'Server timeout, impossible to test credentials. Try signing up later.'}),
+            status=404,
+            mimetype='application/json')
+    except requests.exceptions.TooManyRedirects:
+        # Tell the user their URL was bad and try a different one
+        return Response(json_util.dumps(
+            {'response': 'Impossible to find url, impossible to test credentials. Try signing up later.'}),
+                        status=400,
+                        mimetype='application/json')
+    except requests.exceptions.RequestException as err:
+        # catastrophic error. bail.
+        return Response(json_util.dumps({'response': str(err)}), status=400,
+                        mimetype='application/json')
+    print(response)
+    response = json.loads(response.decode('utf-8'))
+    if 'error' in response:
+        return Response(json_util.dumps({'response': response['error']}), status=400, mimetype='application/json')
+
+    elif 'token' in response:
+        ob_token = response['token']
+        print(ob_token)
+        try:
+            # future work, implementation of email confirmation mecanisme
+            mongodb.find_one_and_update({'_id': ObjectId(payload)},
+                                        {'$set': {'obp_authorization': ob_token}})
+            return Response(json_util.dumps({'response': 'Successful registration with your open bank account.'}),
+                            status=200, mimetype='application/json')
+        except (errors.DuplicateKeyError, mongoengine.errors.NotUniqueError):
+            return Response(json_util.dumps({'response': 'This open bank account already exists.'}),
+                            status=400, mimetype='application/json')
+        except errors.ServerSelectionTimeoutError:
+            return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=404,
+                            mimetype='application/json')
+
+    return Response(json_util.dumps({'response': 'Same error occurred!'}), status=400,
+                mimetype='application/json')
+
+
+
+# Check if user is associated on open bank project
+@app.route('/user/my/account/obp/authorization', methods=['GET'])
+@Authorization
+@swag_from('API_Definitions/user_get_obp_authorization.yml')
+def get_obp_authorization(**kwargs):
+    print("hello")
+    user_id = kwargs['payload']
+    try:
+        user = mongodb.find_one({'_id': ObjectId(user_id)})
+        if user is None:
+            return Response(json_util.dumps({'response': 'No user found'}),
+                            status=400, mimetype='application/json')
+        else:
+            if 'obp_authorization' not in user:
+                return Response(json_util.dumps({"obp_authorization" : "NULL"}), status=400,
+                                mimetype='application/json')
+            else:
+                return Response(json_util.dumps({"obp_authorization" : user['obp_authorization']}), status=200,
+                                mimetype='application/json')
     except errors.ServerSelectionTimeoutError:
         return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=404,
                         mimetype='application/json')

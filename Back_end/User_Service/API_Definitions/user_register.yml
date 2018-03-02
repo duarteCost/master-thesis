@@ -27,7 +27,7 @@ parameters:
   description: User's password
   required: true
 - in: formData
-  name: Password confirmation
+  name: confirm-password
   description: Confirme password of account
   required: true
 

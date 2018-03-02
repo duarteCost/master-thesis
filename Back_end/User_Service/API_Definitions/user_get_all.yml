@@ -1,5 +1,5 @@
-Get account
-Get my Nearsoft Payment Provaider Account.
+Get all users
+Get all users in Nearsoft Payment Provaider Account. Test route
 
 **Authorization is mandatory**
 
@@ -11,10 +11,8 @@ Get my Nearsoft Payment Provaider Account.
 ---
 tags:
 - User
-security:
-  - JWT: []
-summary: Get user by user ID
-operationId: my_account
+summary: Get all user
+operationId: all_accounts
 produces:
 - application/json
 - application/xml

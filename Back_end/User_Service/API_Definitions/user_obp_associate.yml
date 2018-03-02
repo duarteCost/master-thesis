@@ -1,4 +1,4 @@
-Associate user with open bank to use PSD2
+Associate user with Open Bank Project to use PSD2
 Through this route the Nearsoft Payment Provider requires an authorization of the Open Bank to use the PSD2
 (payments, consultations) routes for that user.
 Case the user does not have Open Bank PSD2 SandBox Account must:
@@ -16,7 +16,7 @@ In this moment the Nearsoft Payment Provider have authorization to do payments f
   4 - Paste the token into the text input
 ---
 tags:
-- PSD2
+- User
 security:
   - JWT: []
 operationId: associate

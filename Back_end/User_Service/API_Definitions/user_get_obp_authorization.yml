@@ -1,5 +1,5 @@
-Get account
-Get my Nearsoft Payment Provaider Account.
+Get authorization in open bank project
+Verify if user is alredy associeted in Open Bank Project and return the auturization in positive case.
 
 **Authorization is mandatory**
 
@@ -13,8 +13,8 @@ tags:
 - User
 security:
   - JWT: []
-summary: Get user by user ID
-operationId: my_account
+summary: Verify association
+operationId: authorization
 produces:
 - application/json
 - application/xml
@@ -22,7 +22,7 @@ responses:
   200:
     description: Successful operation
     schema:
-      $ref: '#/definitions/user'
+      $ref: '#/definitions/success_verification'
   400:
     description: Missing or invalid credentials
     schema:
@@ -33,27 +33,12 @@ responses:
       $ref: '#/definitions/error40X'
 
 definitions:
-  user:
+  success_verification:
     type: object
     properties:
-      id:
-        type: string
-      name:
-        type: string
-      surname:
-        type: string
-      email:
-        type: string
-      password:
-        type: string
-      modifiedAt:
-        type: string
-        format: date-time
       obp_authorization:
         type: string
-        description: Only if the user is associated with obp
-    xml:
-      name: User
+
 
   error40X:
     properties:

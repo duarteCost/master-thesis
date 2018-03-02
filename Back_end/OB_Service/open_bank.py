@@ -29,7 +29,6 @@ with open('config.json', 'r') as f:
 AUTH_HOST_IP = config['DEFAULT']['AUTH_HOST_IP']
 USER_HOST_IP = config['DEFAULT']['USER_HOST_IP']
 OB_API_HOST = config['OB']['OB_API_HOST']
-CONSUMER_KEY = config['OB']['CONSUMER_KEY']
 API_VERSION = config['OB']['API_VERSION']
 
 
@@ -38,7 +37,25 @@ def Authorization(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
         token = request.headers.get('Authorization')
-        response_bytes = requests.get('https://'+AUTH_HOST_IP+':5000/authorization', headers={'Authorization': token},verify=False).content #Verifies in Auth_Service if the token is valid and returns the payload(user_id)
+
+        try:
+            response_bytes = requests.get('https://' + AUTH_HOST_IP + ':5000/authorization',
+                                          headers={'Authorization': token},
+                                          verify=False).content  # Verifies in Auth_Service if the token is valid and returns the payload(user_id)
+        except requests.exceptions.Timeout:
+            # Maybe set up for a retry, or continue in a retry loop
+            return Response(json_util.dumps({'response': 'Server timeout.'}), status=404,
+                            mimetype='application/json')
+        except requests.exceptions.TooManyRedirects:
+            # Tell the user their URL was bad and try a different one
+            return Response(json_util.dumps({'response': 'Impossible to find url.'}), status=404,
+                            mimetype='application/json')
+        except requests.exceptions.RequestException as err:
+            # catastrophic error. bail.
+            return Response(json_util.dumps({'response': str(err)}), status=404,
+                            mimetype='application/json')
+            sys.exit(1)
+
         response = response_bytes.decode("utf-8")
         error_message = 'Invalid token.'
         if response != error_message:
@@ -58,22 +75,39 @@ def OB_Authorization(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
 
-        payload = kwargs['payload']; # The payload represents the user id, getted from authentication header of the user
+        token = kwargs['token']
+        print(token)
+
         try:
-            user_ob_account = mongodb.find_one({'user_id': ObjectId(payload)})
-            if user_ob_account is None:
-                return Response(json_util.dumps(
-                    {'response': 'You have not registered your open bank account yet on our platform.'}),
-                                status=400, mimetype='application/json')
-            else:
-                # If the user has associated on open bank, your authorization is obtained from db
-                raw_token = user_ob_account['ob_token']
-                dl_token = "DirectLogin token=" + raw_token
-                print(dl_token)
-                kwargs['user_ob_token'] = dl_token #save direct login token in kwargs array
-        except errors.ServerSelectionTimeoutError:
-            return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=404,
+            response_bytes = requests.get('https://' + USER_HOST_IP + ':5001/user/my/account/obp/authorization',
+                                          headers={'Authorization': token},
+                                          verify=False).content  # Checks in User_Service whether the user is associated with the open bank
+        except requests.exceptions.Timeout:
+            # Maybe set up for a retry, or continue in a retry loop
+            return Response(json_util.dumps({'response': 'Server timeout.'}), status=404,
                             mimetype='application/json')
+        except requests.exceptions.TooManyRedirects:
+            # Tell the user their URL was bad and try a different one
+            return Response(json_util.dumps({'response': 'Impossible to find url.'}), status=404,
+                            mimetype='application/json')
+        except requests.exceptions.RequestException as err:
+            # catastrophic error. bail.
+            return Response(json_util.dumps({'response': str(err)}), status=404,
+                            mimetype='application/json')
+            sys.exit(1)
+
+        response = response_bytes.decode("utf-8")
+        response = json.loads(response)
+        if response['obp_authorization'] == "NULL":
+            return Response(json_util.dumps(
+                {'response': 'You have not registered your open bank account yet on our platform.'}),
+                status=400, mimetype='application/json')
+        else:
+            # If the user has associated on open bank, your authorization is obtained from db
+            raw_token = response['obp_authorization']
+            dl_token = "DirectLogin token=" + raw_token
+            print(dl_token)
+            kwargs['user_ob_token'] = dl_token  # save direct login token in kwargs array
         return f(*args, **kwargs)
     return wrapper
 
@@ -82,13 +116,6 @@ def set_baseurl_apiversion():
     obp.setApiVersion(API_VERSION)
 
 
-# def get_bank_and_account(dl_token, amount):
-#     user = obp.getCurrentUser(dl_token)
-#     print(user)
-#
-#     # --------------------------- 2º fase --------------------------------------------------------------------
-#
-#     return data
 
 
 app = Flask(__name__)
@@ -127,74 +154,6 @@ def welcome_ob():
                     mimetype='application/json')
 
 
-
-@app.route('/ob/associate', methods=['POST'])
-@Authorization
-@swag_from('API_Definitions/ob_associate.yml')
-# Handler for HTTP Post - "/ob/register"
-def create_user(**kwargs):
-    payload = kwargs['payload'];   #user id
-    request_params = request.form
-    print(request_params)
-    if 'username' not in request_params:
-        return Response(json_util.dumps({'response': 'Missing parameter: username'}), status=400,
-                        mimetype='application/json')
-    elif 'password' not in request_params:
-        return Response(json_util.dumps({'response': 'Missing parameter: password'}), status=400,
-                        mimetype='application/json')
-    elif 'confirm-password' not in request_params:
-        return Response(json_util.dumps({'response': 'Missing parameter: confirm password'}), status=400,
-                        mimetype='application/json')
-    elif request_params['password'] !=  request_params['confirm-password']:
-        return Response(json_util.dumps({'response': 'Passwords does not match'}), status=400,
-                        mimetype='application/json')
-
-    username = request_params['username']
-    password = request_params['password']
-
-    try:
-        #Obtain authorization to use the psd2 routes for that user
-        response = requests.post(OB_API_HOST + '/my/logins/direct',
-                                 headers={
-                                     'Authorization': 'DirectLogin username='+username+', password='+password+', consumer_key='+CONSUMER_KEY,
-                                     'Content-Type': 'application/json'}).content
-
-    except requests.exceptions.Timeout:
-        # Maybe set up for a retry, or continue in a retry loop
-        return Response(json_util.dumps({'response': 'Server timeout, impossible to test credentials. Try signing up later.'}), status=404,
-                        mimetype='application/json')
-    except requests.exceptions.TooManyRedirects:
-        # Tell the user their URL was bad and try a different one
-        return Response(json_util.dumps({'response': 'Impossible to find url, impossible to test credentials. Try signing up later.'}), status=400,
-                        mimetype='application/json')
-    except requests.exceptions.RequestException as err:
-        # catastrophic error. bail.
-        return Response(json_util.dumps({'response': str(err)}), status=400,
-                        mimetype='application/json')
-    print(response)
-    response = json.loads(response.decode('utf-8'))
-    if 'error' in response:
-        return Response(json_util.dumps({'response': response['error']}), status=400, mimetype='application/json')
-
-    elif 'token' in response:
-        ob_token = response['token']
-        print(ob_token)
-        try:
-            mongoengine.connect(db='PISP_OB_UserDB', host='localhost', port=27017)
-            #future work, implementation of email confirmation mecanisme
-
-            Ob_account(ObjectId(), ob_token, ObjectId(payload)).save() # Save authorization for that user
-            return Response(json_util.dumps({'response': 'Successful registration with your open bank account.'}),
-                            status=200, mimetype='application/json')
-        except (errors.DuplicateKeyError, mongoengine.errors.NotUniqueError):
-            return Response(json_util.dumps({'response': 'This open bank account already exists.'}),
-                            status=400, mimetype='application/json')
-        except errors.ServerSelectionTimeoutError:
-            return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=404,
-                            mimetype='application/json')
-
-    return Response(json_util.dumps({'response': 'Same error occurred!'}), status=400,
-                    mimetype='application/json')
 
 
 #get current user from User_service data through do OB_Service
