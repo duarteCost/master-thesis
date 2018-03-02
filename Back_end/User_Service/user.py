@@ -59,8 +59,6 @@ swagger = Swagger(app, template={
         "http",
         "https",
     ],
-    "host": "https://localhost:5001",
-    "basePath": "Nearsoft/PSP/User",  # base bash for blueprint registration
     "securityDefinitions":{
         "JWT":{
             "description":"JWT autorization",

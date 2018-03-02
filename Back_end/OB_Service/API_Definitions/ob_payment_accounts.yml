@@ -1,5 +1,5 @@
-Get account
-Get my Nearsoft Payment Provaider Account.
+Get the payment bank accounts
+This route returns the bank accounts that have an enough amount to initialize a transaction
 
 **Authorization is mandatory**
 
@@ -13,15 +13,20 @@ tags:
 - PSD2
 security:
   - JWT: []
-operationId: my_account
+operationId: payment_account
 produces:
 - application/json
 - application/xml
+parameters:
+- in: formData
+  name: amount
+  description: Amount of transaction
+  required: true
 responses:
   200:
     description: Successful operation
     schema:
-      $ref: '#/definitions/success_get_user'
+      $ref: '#/definitions/success_payment_account'
   400:
     description: Missing or invalid credentials
     schema:
@@ -33,32 +38,26 @@ responses:
 
 definitions:
 
-  success_get_user:
+  success_payment_account:
     properties:
       response:
         type: array
-        $ref: '#/definitions/user'
+        $ref: '#/definitions/response_payment_account'
 
-  user:
-    type: object
+  response_payment_account:
     properties:
-      id:
+      bank:
         type: string
-      name:
+      account:
         type: string
-      surname:
-        type: string
-      email:
-        type: string
-      password:
-        type: string
-      modifiedAt:
-        type: string
-        format: date-time
-    xml:
-      name: User
+      balance:
+        type: array
+        $ref: '#/definitions/balance'
 
-  error40X:
+  balance:
     properties:
-      response:
+      currency:
         type: string
+      amount:
+        type: atring
+

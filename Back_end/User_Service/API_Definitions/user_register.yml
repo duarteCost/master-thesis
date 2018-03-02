@@ -2,7 +2,7 @@ Create user account on Nearsoft Payment Provider
 Account creation at Nearsoft Payment Provaider to use Nearsoft payment services.
 ---
 tags:
-- user
+- User
 summary: Create user account on Nearsoft Payment Provider
 description: Create User.
 operationId: register

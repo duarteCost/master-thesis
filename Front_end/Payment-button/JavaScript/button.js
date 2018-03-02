@@ -23,9 +23,11 @@ function getCookie(cname) {
 
 // Get the transaction charge
 function getCharge(token) {
+    var data_serialized = {"amount": getCookie("amount")};
     return $.ajax({
         type: "GET",
         url:"https://127.0.0.1:5002/ob/payment/charge" ,
+        data:data_serialized,
         beforeSend: function (xhr) {
             /* Authorization header */
             xhr.setRequestHeader("Authorization", token);

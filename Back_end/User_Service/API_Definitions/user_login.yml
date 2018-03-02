@@ -4,7 +4,7 @@ authorization is required. If you do not already have an account you can registe
  page.
 ---
 tags:
-- user
+- User
 operationId: login
 produces:
 - application/json

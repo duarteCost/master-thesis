@@ -13,7 +13,6 @@ tags:
 - User
 security:
   - JWT: []
-summary: Get user by user ID
 operationId: my_account
 produces:
 - application/json
@@ -22,7 +21,7 @@ responses:
   200:
     description: Successful operation
     schema:
-      $ref: '#/definitions/user'
+      $ref: '#/definitions/success_get_user'
   400:
     description: Missing or invalid credentials
     schema:
@@ -33,6 +32,13 @@ responses:
       $ref: '#/definitions/error40X'
 
 definitions:
+
+  success_get_user:
+    properties:
+      response:
+        type: array
+        $ref: '#/definitions/user'
+
   user:
     type: object
     properties:

@@ -51,35 +51,7 @@ def Authorization(f):
     return wrapper
 
 
-# def DirectLogin(f):
-#     @wraps(f)
-#     def wrapper(*args, **kwargs):
-#         payload = kwargs['payload'];
-#         try:
-#             user_ob_account = mongodb.find_one({'user_id': ObjectId(payload)})
-#             print(user_ob_account)
-#             if user_ob_account is None:
-#                 return Response(json_util.dumps(
-#                     {'response': 'You have not registered your open bank account yet on our platform.'}),
-#                                 status=500, mimetype='application/json')
-#             else:
-#                 # http call the open bank server to get the token
-#                 response = requests.post(OB_API_HOST + '/my/logins/direct',
-#                                          headers={
-#                                              'Authorization': 'DirectLogin username=' + user_ob_account[
-#                                                  'username'] + ', password=' + user_ob_account[
-#                                                                   'password'] + ', consumer_key=' + CONSUMER_KEY,
-#                                              'Content-Type': 'application/json'}).content
-#
-#                 token = json.loads(response.decode('utf-8'))
-#                 dl_token = token['token']
-#                 dl_token = "DirectLogin token=" + dl_token
-#                 kwargs['user_ob_token'] = dl_token
-#         except errors.ServerSelectionTimeoutError:
-#             return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=500,
-#                             mimetype='application/json')
-#         return f(*args, **kwargs)
-#     return wrapper
+
 
 
 def OB_Authorization(f):
@@ -110,20 +82,13 @@ def set_baseurl_apiversion():
     obp.setApiVersion(API_VERSION)
 
 
-def get_bank_and_account(dl_token):
-    user = obp.getCurrentUser(dl_token)
-    print(user)
-
-    # --------------------------- 2º fase --------------------------------------------------------------------
-    data = obp.all_accounts(dl_token)
-    print(data)
-    our_bank = data[0]['our_bank']
-    print(our_bank)
-    our_account = data[0]['our_account']
-    print(our_account)
-    # --------------------------------------------------------------------------------------------------------
-    data = {'our_bank':our_bank, 'our_account': our_account}
-    return data
+# def get_bank_and_account(dl_token, amount):
+#     user = obp.getCurrentUser(dl_token)
+#     print(user)
+#
+#     # --------------------------- 2º fase --------------------------------------------------------------------
+#
+#     return data
 
 
 app = Flask(__name__)
@@ -144,8 +109,6 @@ swagger = Swagger(app, template={
         "http",
         "https",
     ],
-    "host": "https://localhost:5002",
-    "basePath": "Nearsoft/PSP/PSD2",  # base bash for blueprint registration
     "securityDefinitions":{
         "JWT":{
             "description":"JWT autorization",
@@ -236,9 +199,9 @@ def create_user(**kwargs):
 
 #get current user from User_service data through do OB_Service
 
-@app.route('/ob/my/account', methods=['GET'])
+@app.route('/ob/my/user/account', methods=['GET'])
 @Authorization
-@swag_from('API_Definitions/ob_get_user.yml')
+@swag_from('API_Definitions/ob_my_user_account.yml')
 # Handler for HTTP GET - "/user/current-user"
 def get_current_ob_user(**kwargs):
     payload = kwargs['payload'];  # user id
@@ -248,7 +211,7 @@ def get_current_ob_user(**kwargs):
         user_ob_account = mongodb.find_one({'user_id': ObjectId(payload)})
         if user_ob_account is None:
             return Response(json_util.dumps({'response': 'No user found'}),
-                            status=404, mimetype='application/json')
+                            status=400, mimetype='application/json')
         else:
             #Get other user credentials from the User_Service
             response_bytes = requests.get('https://' + USER_HOST_IP + ':5001/user/my/account',
@@ -258,28 +221,69 @@ def get_current_ob_user(**kwargs):
             return Response(json_util.dumps({"response":response}), status=200,
                             mimetype='application/json')
     except errors.ServerSelectionTimeoutError:
-        return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=500,
+        return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=404,
                         mimetype='application/json')
 
-
-
-
+# This route gets all accounts in different banks
+@app.route('/ob/my/bank/accounts', methods=['GET'])
+@Authorization
+@OB_Authorization
+@swag_from('API_Definitions/ob_my_bank_accounts.yml')
+def get_my_bank_accounts(**kwargs):
+    set_baseurl_apiversion()
+    dl_token = kwargs['user_ob_token']  # Get the user authorization given by the open bank
+    banks_accounts = obp.all_accounts(dl_token)
+    return Response(json_util.dumps({'response': banks_accounts}), status=200,
+                    mimetype='application/json')
 
 # ob routes, this routes correspond to the payment using PSD2
+#This route return accounts with amount enough to one transaction
+@app.route('/ob/payment/accounts', methods=['POST'])
+@Authorization
+@OB_Authorization
+@swag_from('API_Definitions/ob_payment_accounts.yml')
+def define_avilable_accounts(**kwargs):
+    set_baseurl_apiversion()
+    request_params = request.form
+    print(request.form)
+    if 'amount' not in request_params:
+        return Response(json_util.dumps({'response': 'Missing parameter: amount'}), status=404,
+                        mimetype='application/json')
+
+    dl_token = kwargs['user_ob_token']  # Get the user authorization given by the open bank
+    banks_accounts = obp.all_accounts(dl_token)
+    print(banks_accounts)
+    available_banks_accounts = [] # Bank accounts with the amount available
+    for bank_account in banks_accounts:
+        print(bank_account)
+        our_bank = bank_account['our_bank']  # define default ask professor
+        our_account = bank_account['our_account']  # define default ask professor
+        account_details = obp.getAccountById(our_bank, our_account, dl_token)
+        if request_params['amount'] <=  account_details['balance']['amount']:
+            available_banks_accounts.append({'our_bank': account_details['id'], 'our_account': account_details['bank_id'],
+                                         'balance' : account_details['balance']})
+    print(available_banks_accounts)
+    return Response(json_util.dumps({'response': available_banks_accounts }), status=200,
+                    mimetype='application/json')
+
+
+
+
+
 
 #This route gets the transaction fee
 @app.route('/ob/payment/charge', methods=['GET'])
 @Authorization
 @OB_Authorization
-@swag_from('API_Definitions/ob_payment_charge.yml')
+@swag_from('API_Definitions/ob_charge.yml')
 def get_charge(**kwargs):
-
     dl_token = kwargs['user_ob_token'] # Get the user authorization given by the open bank
 
     set_baseurl_apiversion() #Fill the API url and version with config file data
-    data = get_bank_and_account(dl_token) #Get the one of the user accounts in one bank of the user banks
-    our_bank = data['our_bank']
-    our_account = data['our_account']
+    # data = get_bank_and_account(dl_token, request_params['amount']) #Get the one of the user accounts in one bank of the user banks
+
+    our_bank = kwargs['our_bank']
+    our_account = kwargs['our_account']
 
     challenge_types = obp.getChallengeTypes(our_bank, our_account, dl_token) #See Lib
     charge = challenge_types[0]['charge']
@@ -288,19 +292,22 @@ def get_charge(**kwargs):
                     mimetype='application/json')
 
 
+
+
 #Initialize payment, as a result, the transaction may or may not be completed
 @app.route('/ob/payment/initiate-transaction-request', methods=['POST'])
 @Authorization
 @OB_Authorization
 @swag_from('API_Definitions/ob_initiate_transaction_request.yml')
 def payment_initialization(**kwargs):
+    set_baseurl_apiversion()
     request_params = request.form
     print(request_params)
     if 'currency' not in request_params:
-        return Response(json_util.dumps({'response': 'Missing parameter: currency'}), status=404,
+        return Response(json_util.dumps({'response': 'Missing parameter: currency'}), status=400,
                         mimetype='application/json')
     elif 'amount' not in request_params:
-        return Response(json_util.dumps({'response': 'Missing parameter: amount'}), status=404,
+        return Response(json_util.dumps({'response': 'Missing parameter: amount'}), status=400,
                         mimetype='application/json')
 
     # merchant bank details - hard coded
@@ -309,15 +316,15 @@ def payment_initialization(**kwargs):
 
 
     OUR_CURRENCY = request_params['currency']
-    OUR_VALUE_LARGE = request_params['amount']
-    obp.setPaymentDetails(OUR_CURRENCY, OUR_VALUE_LARGE)
+    OUR_VALUE = request_params['amount']
+    obp.setPaymentDetails(OUR_CURRENCY, OUR_VALUE)
 
 
     dl_token = kwargs['user_ob_token'] #Get the user authorization given by the open bank
     set_baseurl_apiversion() #Fill the API url and version with config file data
-    data = get_bank_and_account(dl_token)#Get the one of the user accounts in one bank of the user banks
-    our_bank = data['our_bank']
-    our_account = data['our_account']
+    # data = get_bank_and_account(dl_token, request_params['amount']) #Get the one of the user accounts in one bank of the user banks
+    our_bank = kwargs['our_bank']
+    our_account = kwargs['our_account']
 
 
     challenge_types = obp.getChallengeTypes(our_bank, our_account, dl_token) #use default sandbox_tan
@@ -326,7 +333,7 @@ def payment_initialization(**kwargs):
     initiate_response = obp.initiateTransactionRequest(our_bank, our_account, challenge_type, cp_bank, cp_account,dl_token) #See Lib
     print(initiate_response)
     if "error" in initiate_response:
-        return Response(json_util.dumps({'response': 'Got an error: ' + str(initiate_response)}), status=404,
+        return Response(json_util.dumps({'response': 'Got an error: ' + str(initiate_response)}), status=400,
                         mimetype='application/json')
 
     return Response(json_util.dumps({'response': initiate_response}), status=200,
@@ -341,13 +348,14 @@ def payment_initialization(**kwargs):
 @OB_Authorization
 @swag_from('API_Definitions/ob_answer_challenge.yml')
 def payment_answer_challenge(**kwargs):
+    set_baseurl_apiversion()
     request_params = request.form
     print(request_params) #body of route
     if 'transaction_req_id' not in request_params:
-        return Response(json_util.dumps({'response': 'Missing parameter: transaction_req_id'}), status=404,
+        return Response(json_util.dumps({'response': 'Missing parameter: transaction_req_id'}), status=400,
                         mimetype='application/json')
     elif 'challenge_query' not in request_params:
-        return Response(json_util.dumps({'response': 'Missing parameter: challenge_query'}), status=404,
+        return Response(json_util.dumps({'response': 'Missing parameter: challenge_query'}), status=400,
                         mimetype='application/json')
 
     transaction_req_id = request_params['transaction_req_id']
@@ -355,13 +363,14 @@ def payment_answer_challenge(**kwargs):
 
     dl_token = kwargs['user_ob_token'] #Get the user authorization given by the open bank
     set_baseurl_apiversion() #Fill the API url and version with config file data
-    data = get_bank_and_account(dl_token)#Get the one of the user accounts in one bank of the user banks
-    our_bank = data['our_bank']
-    our_account = data['our_account']
+    # data = get_bank_and_account(dl_token, request_params['amount']) #Get the one of the user accounts in one bank of the user banks
+    our_bank = kwargs['our_bank']
+    our_account = kwargs['our_account']
+
 
     challenge_response = obp.answerChallenge(our_bank, our_account, transaction_req_id, challenge_query, dl_token)#See Lib
     if "error" in challenge_response:
-        return Response(json_util.dumps({'response': 'Got an error: ' + str(challenge_response)}), status=404,
+        return Response(json_util.dumps({'response': 'Got an error: ' + str(challenge_response)}), status=400,
                         mimetype='application/json')
 
 
