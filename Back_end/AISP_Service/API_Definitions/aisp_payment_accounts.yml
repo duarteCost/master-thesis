@@ -10,7 +10,7 @@ This route returns the bank accounts that have an enough amount to initialize a 
   4 - Paste the token into the text input
 ---
 tags:
-- PSD2
+- AISP
 security:
   - JWT: []
 operationId: payment_account
@@ -18,7 +18,7 @@ produces:
 - application/json
 - application/xml
 parameters:
-- in: formData
+- in: query
   name: amount
   description: Amount of transaction
   required: true
@@ -60,4 +60,9 @@ definitions:
         type: string
       amount:
         type: atring
+
+  error40X:
+    properties:
+      response:
+        type: string
 

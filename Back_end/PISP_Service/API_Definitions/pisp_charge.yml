@@ -1,5 +1,7 @@
-Get account
-Get my Nearsoft Payment Provaider Account.
+Get payment charge
+This route uses the PSD2 and allows to obtain the charge associated with the transaction.
+There are 2 parameters related to the payer, which are the bank_id corresponding to the bank id and account_id
+ that corresponds to the account id.
 
 **Authorization is mandatory**
 
@@ -10,18 +12,27 @@ Get my Nearsoft Payment Provaider Account.
   4 - Paste the token into the text input
 ---
 tags:
-- User
+- PISP
 security:
   - JWT: []
-operationId: my_account
+operationId: charge
 produces:
 - application/json
 - application/xml
+parameters:
+- in: path
+  name: bank_id
+  description: Id of the paying bank
+  required: true
+- in: path
+  name: account_id
+  description: Id of the paying account
+  required: true
 responses:
   200:
     description: Successful operation
     schema:
-      $ref: '#/definitions/success_get_user'
+      $ref: '#/definitions/success_get_charge'
   400:
     description: Missing or invalid credentials
     schema:
@@ -33,30 +44,18 @@ responses:
 
 definitions:
 
-  success_get_user:
+  success_get_charge:
     properties:
       response:
         type: array
-        $ref: '#/definitions/user'
+        $ref: '#/definitions/response_get_charge'
 
-  user:
-    type: object
+  response_get_charge:
     properties:
-      id:
+      charge:
         type: string
-      name:
-        type: string
-      surname:
-        type: string
-      email:
-        type: string
-      password:
-        type: string
-      modifiedAt:
-        type: string
-        format: date-time
-    xml:
-      name: User
+
+
 
   error40X:
     properties:

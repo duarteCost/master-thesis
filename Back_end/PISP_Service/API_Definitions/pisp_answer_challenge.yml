@@ -1,8 +1,11 @@
-Initiate transaction request
-Initiate transaction request Payment Provaider Account. This route uses the PSD2  and allows initiate online payments via
- transaction. Of the transaction may result in several states. In case the amount of transaction is less than 1000 currency units
- the status will be COMPLETED, not requiring the user to do anything else. If the amount of transaction exceeds 1000 currency units
- it becomes necessary to answareto a challenge. This request use two parameters, the amount of transaction and the corrency.
+Answer challenge to conclude transaction
+According to the PSD2 if the transaction amount is exceeds a limit to complete the transaction should be required to
+answer a challenge. If the status of the initialization of the transaction request is INITIATED, it becomes necessary to
+answer a challenge to conclud the transaction. This challenge can be done through this route, using as parameters the
+challenge id and transaction id from route [initiate_transaction_request](https://localhost:5002/apidocs/#!/PSD2/initiate_transaction_request).
+There are also 2 other parameters related to the payer, which are the bank_id corresponding to the bank id and account_id
+that corresponds to the account id.
+Strong Costomer Authentication can also be added to this PSD2 requirement.
 
 **Authorization is mandatory**
 
@@ -12,23 +15,31 @@ Initiate transaction request Payment Provaider Account. This route uses the PSD2
   3 - Click on authorize on this page
   4 - Paste the token into the text input
 ---
-
 tags:
-- PSD2
+- PISP
 security:
   - JWT: []
-operationId: initiate_transaction_request
+summary: Answer challenge to conclude transaction
+operationId: answer_challenge
 produces:
 - application/json
 - application/xml
 parameters:
-- in: formData
-  name: currency
-  description: Currency
+- in: path
+  name: bank_id
+  description: Id of the paying bank
+  required: true
+- in: path
+  name: account_id
+  description: Id of the paying account
   required: true
 - in: formData
-  name: amount
-  description: Amount
+  name: challenge_query
+  description: Challenge ID of Initiated transaction
+  required: true
+- in: formData
+  name: transaction_req_id
+  description: Transaction request ID of Initiated transaction
   required: true
 responses:
   200:
