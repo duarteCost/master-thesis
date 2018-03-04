@@ -35,7 +35,7 @@ responses:
   200:
     description: Successful registration in Nearsoft Payment Provaider
     schema:
-      $ref: '#/definitions/success'
+      $ref: '#/definitions/success_user_register'
   400:
     description: Missing or invalid credentials
     schema:
@@ -47,7 +47,7 @@ responses:
 
 definitions:
 
-  success:
+  success_user_register:
     properties:
       response:
         type: string

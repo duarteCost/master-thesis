@@ -45,7 +45,7 @@ responses:
   200:
     description: Successful operation
     schema:
-      $ref: '#/definitions/success_initiate_transaction'
+      $ref: '#/definitions/success_answer_challenge'
   400:
     description: Missing or invalid credentials
     schema:
@@ -56,14 +56,13 @@ responses:
       $ref: '#/definitions/error40X'
 
 definitions:
-
-  success_initiate_transaction:
+  success_answer_challenge:
     properties:
       response:
         type: array
-        $ref: '#/definitions/response_initiate_transaction'
+        $ref: '#/definitions/response_answer_challenge'
 
-  response_initiate_transaction:
+  response_answer_challenge:
     properties:
       id:
         type: array

@@ -60,9 +60,9 @@ definitions:
     properties:
       response:
         type: array
-        $ref: '#/definitions/response_initiate_transaction'
+        $ref: '#/definitions/response_initiate_transaction_request'
 
-  response_initiate_transaction:
+  response_initiate_transaction_request:
     properties:
       id:
         type: array
@@ -89,11 +89,6 @@ definitions:
       charge:
         type: array
         $ref: '#/definitions/charge'
-
-
-
-
-
 
   id:
     properties:
@@ -151,9 +146,6 @@ definitions:
         type: string
       amount:
         type: string
-
-
-
 
   error40X:
     properties:

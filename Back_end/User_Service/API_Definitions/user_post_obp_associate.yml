@@ -40,7 +40,7 @@ responses:
   200:
     description: Successful association Nearsoft Payment Provaide with Open Bank
     schema:
-      $ref: '#/definitions/success_registration'
+      $ref: '#/definitions/success_obp_association'
   400:
     description: Missing or invalid credentials
     schema:
@@ -51,7 +51,7 @@ responses:
       $ref: '#/definitions/error40X'
 
 definitions:
-  success_registration:
+  success_obp_association:
     properties:
       response:
         type: string

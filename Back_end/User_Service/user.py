@@ -14,7 +14,7 @@ from User_Models.user_model import User
 from werkzeug.security import check_password_hash
 from flasgger import Swagger
 
-mongodb = MongoClient('localhost', 27017).PISP_UserDB.user
+mongodb = MongoClient('localhost', 27017).User_db.user
 time.sleep(5)
 
 context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
@@ -79,7 +79,7 @@ def welcome_user():
 
 
 @app.route('/user/register', methods=['POST'])
-@swag_from('API_Definitions/user_register.yml')
+@swag_from('API_Definitions/user_post_register.yml')
 # Handler for HTTP Post - "/user/register"
 def create_user():
     request_params = request.form
@@ -109,7 +109,7 @@ def create_user():
     email = request_params['email']
 
     try:
-        mongoengine.connect(db='PISP_UserDB', host='localhost', port=27017)
+        mongoengine.connect(db='User_db', host='localhost', port=27017)
         User(ObjectId(), email, password, name, surname, None).save()
         return Response(json_util.dumps({'response': 'Successful operation'}),
                         status=200, mimetype='application/json')
@@ -122,7 +122,7 @@ def create_user():
 
 
 @app.route('/user/login', methods=['POST'])
-@swag_from('API_Definitions/user_login.yml')
+@swag_from('API_Definitions/user_post_login.yml')
 # Handler for HTTP POST - "/user/login"
 def login_user():
     request_params = request.form
@@ -167,7 +167,7 @@ def login_user():
                         mimetype='application/json')
         sys.exit(1)
     token = response.decode("utf-8")
-    return Response(json_util.dumps({'response': 'Successful operation', 'token': token}), status=200,
+    return Response(json_util.dumps({'response': {'token': token}}), status=200,
                     mimetype='application/json')
 
 
@@ -194,7 +194,7 @@ def get_user():
 #find corrent user
 @app.route('/user/my/account', methods=['GET'])
 @Authorization
-@swag_from('API_Definitions/user_get_user.yml')
+@swag_from('API_Definitions/user_get_account.yml')
 def get_current_user(**kwargs):
     user_id = kwargs['payload']
     try:
@@ -212,7 +212,7 @@ def get_current_user(**kwargs):
 
 @app.route('/user/obp/associate', methods=['POST'])
 @Authorization
-@swag_from('API_Definitions/user_obp_associate.yml')
+@swag_from('API_Definitions/user_post_obp_associate.yml')
 def obp_associate_user(**kwargs):
     payload = kwargs['payload'];  # user id
     request_params = request.form
@@ -283,11 +283,10 @@ def obp_associate_user(**kwargs):
 
 
 # Check if user is associated on open bank project
-@app.route('/user/my/account/obp/authorization', methods=['GET'])
+@app.route('/user/account/obp/authorization', methods=['GET'])
 @Authorization
 @swag_from('API_Definitions/user_get_obp_authorization.yml')
 def get_obp_authorization(**kwargs):
-    print("hello")
     user_id = kwargs['payload']
     try:
         user = mongodb.find_one({'_id': ObjectId(user_id)})

@@ -8,14 +8,14 @@ from bson import ObjectId, json_util
 from flask import Flask, request, Response, json
 from flask_cors import CORS
 from pymongo import MongoClient, errors
-from AISP_Models.aisp_payment_account import Payment_account
+from AISP_Models.aisp_payment_account import Bank_account
 from flasgger import swag_from
 from flasgger import Swagger
 
 import Lib.obp
 obp = Lib.obp
 
-mongodb = MongoClient('localhost', 27017).PISP_OB_UserDB.ob_account
+mongodb = MongoClient('localhost', 27017).Aisp_payment_account_db.bank_account
 time.sleep(5)
 
 context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
@@ -154,26 +154,93 @@ def welcome_ob():
 
 
 
+# Post default payment account
+@app.route('/aisp/payment/bank/account/default', methods=['POST'])
+@Authorization
+@OB_Authorization
+@swag_from('API_Definitions/aisp_post_payment_bank_account_default.yml')
+def post_my_default_payment_account(**kwargs):
+    payload = kwargs['payload'];  # user id
+    request_params = request.form
+    print(request_params)
+    if 'bank_id' not in request_params:
+        return Response(json_util.dumps({'response': 'Missing parameter: username'}), status=400,
+                        mimetype='application/json')
+    elif 'account_id' not in request_params:
+        return Response(json_util.dumps({'response': 'Missing parameter: password'}), status=400,
+                        mimetype='application/json')
+
+    bank_id = request_params['bank_id']
+    account_id = request_params['account_id']
+
+    try:
+        mongoengine.connect(db='Aisp_payment_account_db', host='localhost', port=27017)
+        Bank_account(ObjectId(), bank_id, account_id, ObjectId(payload)).save()
+
+        return Response(json_util.dumps({'response': 'Successful definition your default payment account.'}),
+                        status=200, mimetype = 'application/json')
+    except (errors.DuplicateKeyError, mongoengine.errors.NotUniqueError):
+
+        return Response(json_util.dumps({'response': 'This open bank account already exists.'}),
+                    status=400, mimetype = 'application/json')
+    except errors.ServerSelectionTimeoutError:
+
+        return Response(json_util.dumps({'response': 'Mongodb is not running'}),
+                    status=404, mimetype='application/json')
+
+    return Response(json_util.dumps({'response': 'Same error occurred!'}),
+                status=400, mimetype='application/json')
+
+
+
+# Get default payment account
+@app.route('/aisp/payment/bank/account/default', methods=['GET'])
+@Authorization
+@OB_Authorization
+@swag_from('API_Definitions/aisp_get_payment_bank_account_default.yml')
+def get_my_default_payment_account(**kwargs):
+    user_id = kwargs['payload']
+    try:
+        payment_account = mongodb.find_one({'user_id': ObjectId(user_id)})
+        if payment_account is None:
+            return Response(json_util.dumps({'response': 'No default payment account has been found'}),
+                            status=400, mimetype='application/json')
+        else:
+            return Response(json_util.dumps({"response": {"bank_id" :  payment_account['bank_id'],
+                            "account_id" : payment_account['account_id'] }}), status=200, mimetype='application/json')
+    except errors.ServerSelectionTimeoutError:
+        return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=404,
+                        mimetype='application/json')
 
 
 # This route gets all accounts in different banks
-@app.route('/aisp/my/bank/accounts', methods=['GET'])
+@app.route('/aisp/bank/accounts', methods=['GET'])
 @Authorization
 @OB_Authorization
-@swag_from('API_Definitions/aisp_my_bank_accounts.yml')
+@swag_from('API_Definitions/aisp_get_bank_accounts.yml')
 def get_my_bank_accounts(**kwargs):
     set_baseurl_apiversion()
     dl_token = kwargs['user_ob_token']  # Get the user authorization given by the open bank
     banks_accounts = obp.all_accounts(dl_token)
-    return Response(json_util.dumps({'response': banks_accounts}), status=200,
+    available_banks_accounts = []
+    for bank_account in banks_accounts:
+        print(bank_account)
+        our_bank = bank_account['our_bank']  # define default ask professor
+        our_account = bank_account['our_account']  # define default ask professor
+        account_details = obp.getAccountById(our_bank, our_account, dl_token)
+        available_banks_accounts.append({'our_bank': account_details['id'], 'our_account': account_details['bank_id'],
+                                         'balance' : account_details['balance']})
+    return Response(json_util.dumps({'response': available_banks_accounts}), status=200,
                     mimetype='application/json')
 
-# ob routes, this routes correspond to the payment using PSD2
-#This route return accounts with amount enough to one transaction
-@app.route('/aisp/payment/accounts', methods=['GET'])
+
+
+# ob routes, this routes correspond to the payment usi ng PSD2
+# This route return accounts with amount enough to one transaction
+@app.route('/aisp/payment/bank/accounts', methods=['GET'])
 @Authorization
 @OB_Authorization
-@swag_from('API_Definitions/aisp_payment_accounts.yml')
+@swag_from('API_Definitions/aisp_get_payment_bank_accounts.yml')
 def define_avilable_accounts(**kwargs):
     set_baseurl_apiversion()
     print(request.args.get('amount') )

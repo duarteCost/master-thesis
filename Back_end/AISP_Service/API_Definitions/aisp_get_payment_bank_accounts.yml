@@ -26,7 +26,7 @@ responses:
   200:
     description: Successful operation
     schema:
-      $ref: '#/definitions/success_payment_account'
+      $ref: '#/definitions/success_payment_accounts'
   400:
     description: Missing or invalid credentials
     schema:
@@ -38,17 +38,17 @@ responses:
 
 definitions:
 
-  success_payment_account:
+  success_payment_accounts:
     properties:
       response:
         type: array
-        $ref: '#/definitions/response_payment_account'
+        $ref: '#/definitions/response_get_payment_bank_account'
 
-  response_payment_account:
+  response_get_payment_bank_account:
     properties:
-      bank:
+      bank_id:
         type: string
-      account:
+      account_id:
         type: string
       balance:
         type: array
@@ -59,7 +59,7 @@ definitions:
       currency:
         type: string
       amount:
-        type: atring
+        type: string
 
   error40X:
     properties:

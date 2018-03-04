@@ -4,7 +4,7 @@ from mongoengine import *
 from werkzeug.security import generate_password_hash
 
 
-class Payment_account(Document):
+class Bank_account(Document):
 
     bank_id = StringField(unique=True,max_length=500, required=True)
     account_id = StringField(unique=True,max_length=500, required=True)

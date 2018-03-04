@@ -1,5 +1,7 @@
-Get account
-Get my Nearsoft Payment Provaider Account.
+Post default payment account
+With this route it is possible to be chosen by default of which account will be made the transactions.
+There are  2  parameters related to the payer, which are the bank_id corresponding to the bank id and account_id
+that corresponds to the account id.
 
 **Authorization is mandatory**
 
@@ -10,19 +12,28 @@ Get my Nearsoft Payment Provaider Account.
   4 - Paste the token into the text input
 ---
 tags:
-- User
+- AISP
 security:
   - JWT: []
-summary: Get user by user ID
-operationId: my_account
+summary: get default payment account
+operationId: post_payment_account
 produces:
 - application/json
 - application/xml
+parameters:
+- in: formData
+  name: bank_id
+  description: Id of the paying bank
+  required: true
+- in: formData
+  name: account_id
+  description: Id of the paying account
+  required: true
 responses:
   200:
     description: Successful operation
     schema:
-      $ref: '#/definitions/user'
+      $ref: '#/definitions/success_post_payment_bank_account_default'
   400:
     description: Missing or invalid credentials
     schema:
@@ -33,27 +44,10 @@ responses:
       $ref: '#/definitions/error40X'
 
 definitions:
-  user:
-    type: object
+  success_post_payment_bank_account_default:
     properties:
-      id:
+      response:
         type: string
-      name:
-        type: string
-      surname:
-        type: string
-      email:
-        type: string
-      password:
-        type: string
-      modifiedAt:
-        type: string
-        format: date-time
-      obp_authorization:
-        type: string
-        description: Only if the user is associated with obp
-    xml:
-      name: User
 
   error40X:
     properties:

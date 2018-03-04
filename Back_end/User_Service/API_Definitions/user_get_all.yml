@@ -20,7 +20,7 @@ responses:
   200:
     description: Successful operation
     schema:
-      $ref: '#/definitions/user'
+      $ref: '#/definitions/success_get_all_users'
   400:
     description: Missing or invalid credentials
     schema:
@@ -31,7 +31,7 @@ responses:
       $ref: '#/definitions/error40X'
 
 definitions:
-  user:
+  success_get_all_users:
     type: object
     properties:
       id:

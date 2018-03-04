@@ -22,7 +22,7 @@ responses:
   200:
     description: successful operation
     schema:
-      $ref: '#/definitions/user_authorization'
+      $ref: '#/definitions/success_user_login'
   400:
     description: Missing or invalid credentials
     schema:
@@ -33,20 +33,14 @@ responses:
       $ref: '#/definitions/error40X'
 
 definitions:
-  user_login:
-    type: object
-    properties:
-      email:
-        type: string
-      password:
-        type: string
-    xml:
-      name: User
-
-  user_authorization:
+  success_user_login:
     properties:
       response:
-        type: string
+        type: array
+        $ref: '#/definitions/response_user_login'
+
+  response_user_login:
+    properties:
       token:
         type: string
 
