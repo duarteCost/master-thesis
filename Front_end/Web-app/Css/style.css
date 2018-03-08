@@ -39,7 +39,7 @@
     border-color: black;
 }
 
-#show-open-bank-user{
+#show-default-payment-account{
     margin-top: 10%;
     text-align: center;
     height: auto;
@@ -47,13 +47,13 @@
     margin-left: 25%;
 }
 
-#show-open-bank-user ul{
+#show-default-payment-account ul{
     margin: 8% 0 0 0;
     padding: 0;
     border: 2px solid #333;
 }
 
-#show-open-bank-user li{
+#show-default-payment-account li{
     display: block;
     width: auto;
     padding: 3px 12px 3px 8px;
@@ -65,6 +65,33 @@
 
 
 /**end ob/
+
+/*Modal of choose another default payment account*/
+#bank_accounts{
+    margin-top: 10%;
+    text-align: center;
+    height: auto;
+    width:50%;
+    margin-left: 25%;
+}
+
+#bank_accounts ul{
+    margin: 8% 0 0 0;
+    padding: 0;
+    border: 2px solid #333;
+}
+
+#bank_accounts li{
+    display: block;
+    width: auto;
+    padding: 3px 12px 3px 8px;
+    border: 1px solid #333;
+}
+
+.modal-header{
+    text-align: center;
+}
+/*End of modal*/
 
 /*register and login*/
 .invalid-field{

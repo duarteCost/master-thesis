@@ -33,6 +33,7 @@ API_VERSION = config['OB']['API_VERSION']
 def Authorization(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
+        print("autho")
         token = request.headers.get('Authorization')
 
         try:
@@ -76,7 +77,7 @@ def OB_Authorization(f):
         print(token)
 
         try:
-            response_bytes = requests.get('https://' + USER_HOST_IP + ':5001/user/my/account/obp/authorization',
+            response_bytes = requests.get('https://' + USER_HOST_IP + ':5001/user/account/obp/authorization',
                                           headers={'Authorization': token},
                                           verify=False).content  # Checks in User_Service whether the user is associated with the open bank
         except requests.exceptions.Timeout:
@@ -157,13 +158,13 @@ def welcome_ob():
 # ob routes, this routes correspond to the payment using PSD2
 
 #This route gets the transaction fee
-@app.route('/pisp/bank/<bank_id>/acount/<account_id>/charge', methods=['GET'])
+@app.route('/pisp/bank/<bank_id>/account/<account_id>/charge', methods=['GET'])
 @Authorization
 @OB_Authorization
 @swag_from('API_Definitions/pisp_get_charge.yml')
 def get_charge(bank_id, account_id,**kwargs):
     dl_token = kwargs['user_ob_token'] # Get the user authorization given by the open bank
-
+    print("here")
     set_baseurl_apiversion() #Fill the API url and version with config file data
     challenge_types = obp.getChallengeTypes(bank_id, account_id, dl_token) #See Lib
     charge = challenge_types[0]['charge']
@@ -175,7 +176,7 @@ def get_charge(bank_id, account_id,**kwargs):
 
 
 #Initialize payment, as a result, the transaction may or may not be completed
-@app.route('/pisp/bank/<bank_id>/acount/<account_id>/initiate-transaction-request', methods=['POST'])
+@app.route('/pisp/bank/<bank_id>/account/<account_id>/initiate-transaction-request', methods=['POST'])
 @Authorization
 @OB_Authorization
 @swag_from('API_Definitions/pisp_post_initiate_transaction_request.yml')
@@ -220,7 +221,7 @@ def payment_initialization(bank_id, account_id,**kwargs):
 
 
 #In case the transaction is not completed (if the amount is greater than x) it is necessary to respond to a challange
-@app.route('/pisp/bank/<bank_id>/acount/<account_id>/answer-challenge', methods=['POST'])
+@app.route('/pisp/bank/<bank_id>/account/<account_id>/answer-challenge', methods=['POST'])
 @Authorization
 @OB_Authorization
 @swag_from('API_Definitions/pisp_post_answer_challenge.yml')

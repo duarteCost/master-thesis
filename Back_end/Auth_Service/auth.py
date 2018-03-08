@@ -4,17 +4,46 @@ import os
 import ssl
 from flask import Flask, request
 from flask_cors import CORS
+from flasgger import swag_from
+from flasgger import Swagger
 
 JWT_SECRET = 'secret'
 JWT_ALGORITHM = 'HS256'
 JWT_EXP_DELTA_SECONDS = 120
 
 app = Flask(__name__)
+app.config['SWAGGER'] = {
+    'title': 'Nearsoft Payment Provaider (Auth API)',
+    'description': 'This is Auth API of Nearsoft Payment Provaider',
+    'uiversion': 2,
+    'email': "duarteafonsocosta@hotmail.com"
+}
+swagger = Swagger(app, template={
+    "info": {
+        "contact": {
+            "email":"duarteafonsocosta@hotmail.com",
+        },
+    },
+    "schemes": [
+        "http",
+        "https",
+    ],
+    "securityDefinitions":{
+        "JWT":{
+            "description":"JWT autorization",
+            "type":"apiKey",
+            "name":"Authorization",
+            "in":"header",
+        },
+    },
+},)
+
 CORS(app)
 context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
 
 # Receives the user id when a login is made and generates a authentication token based on user_id and expiration.
 @app.route('/authentication', methods=['GET'])
+@swag_from('API_Definitions/authentication.yml')
 def create_auth_token():
     user_id = request.headers.get('user_id')
     payload = {
@@ -27,6 +56,7 @@ def create_auth_token():
 
 # Receives the authentication token. If token is valid or is not expired, the user_id is returned.
 @app.route('/authorization', methods=['GET'])
+@swag_from('API_Definitions/authorization.yml')
 def read_auth_token():
     auth_token = request.headers.get('Authorization')
     try:

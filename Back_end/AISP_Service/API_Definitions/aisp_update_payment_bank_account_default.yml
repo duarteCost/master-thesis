@@ -1,7 +1,7 @@
-Get payment charge
-This route uses the PSD2 and allows to obtain the charge associated with the transaction.
-There are 2 parameters related to the payer, which are the bank_id corresponding to the bank id and account_id
- that corresponds to the account id.
+Update default payment account
+With this route you can update the default account that transactions will be made.
+There are  2  parameters related to the payer, which are the bank_id corresponding to the bank id and account_id
+that corresponds to the account id.
 
 **Authorization is mandatory**
 
@@ -12,27 +12,32 @@ There are 2 parameters related to the payer, which are the bank_id corresponding
   4 - Paste the token into the text input
 ---
 tags:
-- PISP
+- AISP
 security:
   - JWT: []
-operationId: charge
+summary: get default payment account
+operationId: post_payment_account
 produces:
 - application/json
 - application/xml
 parameters:
 - in: path
-#  name: bank_id
-#  description: Id of the paying bank
-#  required: true
-#- in: path
-#  name: account_id
-#  description: Id of the paying account
-#  required: true
+  name: id
+  description: Object id
+  required: true
+- in: formData
+  name: bank_id
+  description: Id of the paying bank
+  required: true
+- in: formData
+  name: account_id
+  description: Id of the paying account
+  required: true
 responses:
   200:
     description: Successful operation
     schema:
-      $ref: '#/definitions/success_get_charge'
+      $ref: '#/definitions/success_update_payment_bank_account_default'
   400:
     description: Missing or invalid credentials
     schema:
@@ -43,19 +48,10 @@ responses:
       $ref: '#/definitions/error40X'
 
 definitions:
-
-  success_get_charge:
+  success_update_payment_bank_account_default:
     properties:
       response:
-        type: array
-        $ref: '#/definitions/response_get_charge'
-
-  response_get_charge:
-    properties:
-      charge:
         type: string
-
-
 
   error40X:
     properties:

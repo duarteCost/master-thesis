@@ -45,7 +45,11 @@ definitions:
         type: string
       account_id:
         type: string
-
+#
+#  id:
+#    properties:
+#      oid:
+#        type: string
 
   error40X:
     properties:

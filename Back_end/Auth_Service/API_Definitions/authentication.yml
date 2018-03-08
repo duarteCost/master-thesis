@@ -1,0 +1,39 @@
+Get authentication
+Get a token for a particular user. In the header the ID of user is required
+---
+tags:
+- Auth
+operationId: authentication
+produces:
+- application/json
+- application/xml
+parameters:
+- in: header
+  name: user_id
+  description: Id of user
+  required: true
+responses:
+  200:
+    description: Successful operation
+    schema:
+      $ref: '#/definitions/success_authentication'
+  400:
+    description: Missing or invalid credentials
+    schema:
+      $ref: '#/definitions/error40X'
+  404:
+    description: Bad request
+    schema:
+      $ref: '#/definitions/error40X'
+
+definitions:
+  success_authentication:
+    properties:
+      token:
+        type: string
+
+
+  error40X:
+    properties:
+      response:
+        type: string

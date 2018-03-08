@@ -1,0 +1,40 @@
+Get authorization
+Checks whether the user is authorized to use a resource, if returns a payload.
+In the header, the authentication token is required.
+---
+tags:
+- Auth
+operationId: authorization
+produces:
+- application/json
+- application/xml
+parameters:
+- in: header
+  name: Authorization
+  description: Token provinient of authentication
+  required: true
+responses:
+  200:
+    description: Successful operation
+    schema:
+      $ref: '#/definitions/success_authorization'
+  400:
+    description: Missing or invalid credentials
+    schema:
+      $ref: '#/definitions/error40X'
+  404:
+    description: Bad request
+    schema:
+      $ref: '#/definitions/error40X'
+
+definitions:
+  success_authorization:
+    properties:
+      user_id:
+        type: string
+
+
+  error40X:
+    properties:
+      response:
+        type: string

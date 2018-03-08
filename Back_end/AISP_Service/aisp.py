@@ -78,7 +78,7 @@ def OB_Authorization(f):
         print(token)
 
         try:
-            response_bytes = requests.get('https://' + USER_HOST_IP + ':5001/user/my/account/obp/authorization',
+            response_bytes = requests.get('https://' + USER_HOST_IP + ':5001/user/account/obp/authorization',
                                           headers={'Authorization': token},
                                           verify=False).content  # Checks in User_Service whether the user is associated with the open bank
         except requests.exceptions.Timeout:
@@ -174,22 +174,29 @@ def post_my_default_payment_account(**kwargs):
     account_id = request_params['account_id']
 
     try:
-        mongoengine.connect(db='Aisp_payment_account_db', host='localhost', port=27017)
-        Bank_account(ObjectId(), bank_id, account_id, ObjectId(payload)).save()
+        payment_account = mongodb.find_one({'user_id': ObjectId(payload)})
+        if payment_account is None:
+            mongoengine.connect(db='Aisp_payment_account_db', host='localhost', port=27017)
+            Bank_account(ObjectId(), bank_id, account_id, ObjectId(payload)).save()
 
-        return Response(json_util.dumps({'response': 'Successful definition your default payment account.'}),
-                        status=200, mimetype = 'application/json')
+            return Response(json_util.dumps({'response': 'Successful definition your default payment account.'}),
+                            status=200, mimetype='application/json')
+        else:
+            mongodb.find_one_and_update({'user_id': ObjectId(payload)},
+                                                 {'$set': {'bank_id': bank_id, 'account_id' : account_id}})
+            return Response(json_util.dumps({'response': 'Successful update of your default payment account.'}),
+                            status=200, mimetype='application/json')
     except (errors.DuplicateKeyError, mongoengine.errors.NotUniqueError):
-
-        return Response(json_util.dumps({'response': 'This open bank account already exists.'}),
-                    status=400, mimetype = 'application/json')
+        return Response(json_util.dumps({'response': 'A user can only have one default account.'}),
+                        status=400, mimetype='application/json')
     except errors.ServerSelectionTimeoutError:
-
-        return Response(json_util.dumps({'response': 'Mongodb is not running'}),
-                    status=404, mimetype='application/json')
+        return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=404,
+                        mimetype='application/json')
 
     return Response(json_util.dumps({'response': 'Same error occurred!'}),
                 status=400, mimetype='application/json')
+
+
 
 
 
@@ -206,11 +213,43 @@ def get_my_default_payment_account(**kwargs):
             return Response(json_util.dumps({'response': 'No default payment account has been found'}),
                             status=400, mimetype='application/json')
         else:
+            print(payment_account)
             return Response(json_util.dumps({"response": {"bank_id" :  payment_account['bank_id'],
                             "account_id" : payment_account['account_id'] }}), status=200, mimetype='application/json')
     except errors.ServerSelectionTimeoutError:
         return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=404,
                         mimetype='application/json')
+
+# @app.route('/aisp/payment/bank/account/default/<id>', methods=['PUT'])
+# @Authorization
+# @OB_Authorization
+# @swag_from('API_Definitions/aisp_update_payment_bank_account_default.yml')
+# def update_my_default_payment_account(id,**kwargs):
+#     request_params = request.form
+#     print(request_params)
+#     if 'bank_id' not in request_params:
+#         return Response(json_util.dumps({'response': 'Missing parameter: username'}), status=400,
+#                         mimetype='application/json')
+#     elif 'account_id' not in request_params:
+#         return Response(json_util.dumps({'response': 'Missing parameter: password'}), status=400,
+#                         mimetype='application/json')
+#     bank_id = request_params['bank_id']
+#     account_id = request_params['account_id']
+#
+#     try:
+#         # future work, implementation of email confirmation mecanisme
+#         mongodb.find_one_and_update({'_id': ObjectId(id)},
+#                                     {'$set': {'bank_id': bank_id, 'account_id' : account_id}})
+#         return Response(json_util.dumps({'response': 'Successful registration with your open bank account.'}),
+#                         status=200, mimetype='application/json')
+#     except (errors.DuplicateKeyError, mongoengine.errors.NotUniqueError):
+#         return Response(json_util.dumps({'response': 'This open bank account already exists.'}),
+#                         status=400, mimetype='application/json')
+#     except errors.ServerSelectionTimeoutError:
+#         return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=404,
+#                         mimetype='application/json')
+
+
 
 
 # This route gets all accounts in different banks
@@ -225,18 +264,18 @@ def get_my_bank_accounts(**kwargs):
     available_banks_accounts = []
     for bank_account in banks_accounts:
         print(bank_account)
-        our_bank = bank_account['our_bank']  # define default ask professor
-        our_account = bank_account['our_account']  # define default ask professor
+        our_bank = bank_account['our_bank']
+        our_account = bank_account['our_account']
         account_details = obp.getAccountById(our_bank, our_account, dl_token)
-        available_banks_accounts.append({'our_bank': account_details['id'], 'our_account': account_details['bank_id'],
+        available_banks_accounts.append({'bank_id': account_details['bank_id'], 'account_id': account_details['id'],
                                          'balance' : account_details['balance']})
     return Response(json_util.dumps({'response': available_banks_accounts}), status=200,
                     mimetype='application/json')
 
 
 
-# ob routes, this routes correspond to the payment usi ng PSD2
-# This route return accounts with amount enough to one transaction
+# ob routes, this routes correspond to the payment using PSD2
+# This route return accounts with amount enough to the transaction
 @app.route('/aisp/payment/bank/accounts', methods=['GET'])
 @Authorization
 @OB_Authorization
@@ -258,7 +297,7 @@ def define_avilable_accounts(**kwargs):
         our_account = bank_account['our_account']  # define default ask professor
         account_details = obp.getAccountById(our_bank, our_account, dl_token)
         if request.args['amount'] <=  account_details['balance']['amount']:
-            available_banks_accounts.append({'our_bank': account_details['id'], 'our_account': account_details['bank_id'],
+            available_banks_accounts.append({'bank_id': account_details['bank_id'], 'account_id': account_details['id'],
                                          'balance' : account_details['balance']})
     print(available_banks_accounts)
     return Response(json_util.dumps({'response': available_banks_accounts }), status=200,

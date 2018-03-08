@@ -6,9 +6,9 @@ from werkzeug.security import generate_password_hash
 
 class Bank_account(Document):
 
-    bank_id = StringField(unique=True,max_length=500, required=True)
-    account_id = StringField(unique=True,max_length=500, required=True)
-    user_id = ObjectIdField(max_length=200, required=True)
+    bank_id = StringField(max_length=500, required=True)
+    account_id = StringField(max_length=500, required=True)
+    user_id = ObjectIdField(unique=True, max_length=200, required=True)
     modifiedAt = DateTimeField(default=datetime.datetime.now())
 
     def __init__(self, payment_account_id, bank_id, account_id, user_id, *args, **values):

@@ -21,27 +21,48 @@ function getCookie(cname) {
     return "";
 }
 
-// Get the transaction charge
-function getCharge(token) {
-    var data_serialized = {"amount": getCookie("amount")};
+//Get default payment accont
+function get_default_payment_account(token) {
     return $.ajax({
-        type: "GET",
-        url:"https://127.0.0.1:5002/ob/payment/charge" ,
-        data:data_serialized,
+        method: "GET",
+        url: "https://127.0.0.1:5003/aisp/payment/bank/account/default",
         beforeSend: function (xhr) {
             /* Authorization header */
             xhr.setRequestHeader("Authorization", token);
+        },
+    });
+}
+function get_all_possible_payment_accounts(token) {
+    return $.ajax({
+        method: "GET",
+        url: "https://127.0.0.1:5003/aisp/payment/bank/accounts?amount="+getCookie("amount"),
+        beforeSend: function (xhr) {
+            /* Authorization header */
+            xhr.setRequestHeader("Authorization", token);
+        },
+    });
+}
+
+
+// Get the transaction charge
+function get_charge(token, bank_id, account_id) {
+    return $.ajax({
+        url: "https://127.0.0.1:5002/pisp/bank/"+bank_id+"/account/"+account_id+"/charge",
+        type: "GET",
+        beforeSend: function (xhr) {
+            /* Authorization header */
+            xhr.setRequestHeader("Authorization",token);
         }
     })
 }
 
 //The transaction is initiated and the result can be the concluded status or initiated all depends the transaction amount
-function initiate_transaction(token) {
+function initiate_transaction(token, bank_id, account_id) {
     var data_serialized = {"amount": getCookie("amount"), "currency": getCookie("currency")};
     console.log(data_serialized);
     return $.ajax({
         type:"POST",
-        url: "https://127.0.0.1:5002/ob/payment/initiate-transaction-request",
+        url: "https://127.0.0.1:5002/pisp/bank/"+bank_id+"/account/"+account_id+"/initiate-transaction-request",
         data:data_serialized,
         beforeSend: function (xhr) {
             /* Authorization header */
@@ -51,10 +72,10 @@ function initiate_transaction(token) {
 }
 
 //In case of transaction status is initiated its necessary answer one challenge
-function answer_challenge(token, data_serialized) {
+function answer_challenge(token, data_serialized, bank_id, account_id) {
     return $.ajax({
         type: "POST",
-        url: "https://127.0.0.1:5002/ob/payment/answer-challenge",
+        url: "https://127.0.0.1:5002/pisp/bank/"+bank_id+"/account/"+account_id+"/answer-challenge",
         data: data_serialized,
         beforeSend: function (xhr) {
             /* Authorization header */
@@ -63,30 +84,76 @@ function answer_challenge(token, data_serialized) {
     })
 }
 
+function account_amount_verification(accounts, bank_id_default , account_id_default) {
+    var result = false;
+    $.each(accounts, function (key, account) {
+        if (bank_id_default === account.bank_id && account_id_default === account.account_id) {
+            console.log("entrou");
+            result = true;
+            return false;
+        }
+    });
+    return result;
+}
+
 function purchase(token) {
 
-    //first get charge and wait for the conclusion of operatio
-    getCharge(token).done(function (data) {
+
+    get_default_payment_account(token).done(function (data) { //get default payment account
         console.log(data);
-        var continue_operation =confirm("This transaction is subject to a charge of "+data.response.charge+". Do you want to proceed with payment?");
-        if(continue_operation){
-            //initialize the transaction and wait for result
-            initiate_transaction(token).done(function (data) {
-                console.log(data);
-                //If status is initiated is necessary answer the challenge
-                if(data.response.status === "INITIATED"){
-                    var continue_operation =confirm("Your purchase is over 1000 €.  Do you want to proceed with payment?");
-                    if(continue_operation)
-                    {
-                        var data_serialized = {"challenge_query": data.response.challenge.id, "transaction_req_id": data.response.id.value};
-                        answer_challenge(token, data_serialized ).done(function (data) {
-                            console.log(data)
-                            if(data.response.status === "COMPLETED"){
-                                alert("Purchase made successfully!")
+        var bank_id = data.response.bank_id;  //bank_id _default
+        var account_id = data.response.account_id; //account_id _default
+        get_all_possible_payment_accounts(token).done(function (data) { //get all user accounts with enough amount for pay the product
+            console.log(data);
+            var accounts = data.response;
+            if(accounts.length !== 0){  //Check if there is at least one account with money for the purchase
+                if(!account_amount_verification(accounts, bank_id, account_id))
+                {
+                    bank_id = accounts[0].bank_id;
+                    account_id = accounts[0].account_id;
+                    console.log("não tem dinheiro")
+                    var continue_operation =confirm("You do not have enough money in this account to complete the purchase!\n" +
+                        "Do you want to pay with the account "+account_id+" of bank "+bank_id+"?");
+                    if(!continue_operation) {
+                        alert("Purchase was canceled.")
+                        return false
+                    }
+                }
+                console.log("passoou")
+                get_charge(token, bank_id, account_id).done(function (data) {
+                    console.log(data);
+                    var continue_operation =confirm("This transaction is subject to a charge of "+data.response.charge+". Do you want to proceed with payment?");
+                    if(continue_operation){
+                        //initialize the transaction and wait for result
+                        initiate_transaction(token, bank_id, account_id).done(function (data) {
+                            console.log(data);
+                            //If status is initiated is necessary answer the challenge
+                            if(data.response.status === "INITIATED"){
+                                var continue_operation =confirm("Your purchase is over 1000 €.  Do you want to proceed with payment?");
+                                if(continue_operation)
+                                {
+                                    var data_serialized = {"challenge_query": data.response.challenge.id, "transaction_req_id": data.response.id.value};
+                                    answer_challenge(token, data_serialized, bank_id, account_id).done(function (data) {
+                                        console.log(data)
+                                        if(data.response.status === "COMPLETED"){
+                                            alert("Purchase made successfully!")
+                                        }
+                                        else
+                                        {
+                                            alert("Some error occurred.")
+                                        }
+                                    })
+                                }
+                                else
+                                {
+                                    alert("Purchase was canceled.");
+                                }
+
+
                             }
-                            else
-                            {
-                                alert("Some error occurred.")
+                            //if the transaction status is completed the its done
+                            else if(data.response.status === "COMPLETED") {
+                                alert("Purchase made successfully!")
                             }
                         })
                     }
@@ -95,20 +162,17 @@ function purchase(token) {
                         alert("Purchase was canceled.");
                     }
 
+                })
+            }
+            else
+            {
+                alert("No account has enough money to purchase in any account.");
+            }
 
-                }
-                //if the transaction status is completed the its done
-                else if(data.response.status === "COMPLETED") {
-                    alert("Purchase made successfully!")
-                }
-            })
-        }
-        else
-        {
-            alert("Purchase was canceled.");
-        }
+        });
 
     })
+
 }
 
 
@@ -156,7 +220,8 @@ $( document ).ready(function() {
                 var continue_operation = confirm("Login successfully. Do you want to proceed with payment?");
                 if(continue_operation)
                 {
-                    purchase(data.token); //Success operation, proceed with the payment
+                    purchase(data.response.token); //Success operation, proceed with the payment
+                    console.log(data.response.token)
                 }
                 else
                 {

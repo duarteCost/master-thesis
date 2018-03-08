@@ -35,7 +35,7 @@ $(document).ready(function(){
             success: function (data) {
                 console.log('Submission was successful.');
                 console.log(data);
-                setCookie("token", data.token, 0.5);
+                setCookie("token", data.response.token, 0.5);
                 console.log(getCookie("token"));
                 location.replace('index.html');
             },

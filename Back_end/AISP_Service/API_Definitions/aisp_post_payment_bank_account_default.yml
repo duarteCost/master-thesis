@@ -1,5 +1,6 @@
 Post default payment account
-With this route it is possible to be chosen by default of which account will be made the transactions.
+With this route you can define or update (In this case, the default payment account has already been defined)
+the default account that transactions will be made.
 There are  2  parameters related to the payer, which are the bank_id corresponding to the bank id and account_id
 that corresponds to the account id.
 
