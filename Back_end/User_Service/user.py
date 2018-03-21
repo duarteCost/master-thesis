@@ -11,18 +11,21 @@ from flask_cors import CORS
 from pymongo import MongoClient, errors
 from flasgger import swag_from
 from User_Models.user_model import User
-from werkzeug.security import check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 from flasgger import Swagger
 
-mongodb = MongoClient('localhost', 27017).User_db.user
+mongobd_user = MongoClient('localhost', 27017).User_db.user
 time.sleep(5)
 
 context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
 
+
+# Variables from config.json
 with open('config.json', 'r') as f:
     config = json.load(f)
-
 AUTH_HOST_IP = config['DEFAULT']['AUTH_HOST_IP']
+ROLE_HOST_IP = config['DEFAULT']['ROLE_HOST_IP']
+USER_HOST_IP = config['DEFAULT']['USER_HOST_IP']
 OB_API_HOST = config['OB']['OB_API_HOST']
 CONSUMER_KEY = config['OB']['CONSUMER_KEY']
 
@@ -31,23 +34,67 @@ CONSUMER_KEY = config['OB']['CONSUMER_KEY']
 def Authorization(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
+        print("autho")
         token = request.headers.get('Authorization')
-        response_bytes = requests.get('https://'+AUTH_HOST_IP+':5000/authorization', headers={'Authorization': token}, verify=False).content #Verifies in Auth_Service if the token is valid and returns the payload(user_id)
+
+        try:
+            response_bytes = requests.get('https://' + AUTH_HOST_IP + ':5000/authorization',
+                                          headers={'Authorization': token},
+                                          verify=False).content  # Verifies in Auth_Service if the token is valid and returns the payload(user_id)
+        except requests.exceptions.Timeout:
+            # Maybe set up for a retry, or continue in a retry loop
+            return Response(json_util.dumps({'response': 'Server timeout.'}), status=404,
+                            mimetype='application/json')
+        except requests.exceptions.TooManyRedirects:
+            # Tell the user their URL was bad and try a different one
+            return Response(json_util.dumps({'response': 'Impossible to find url.'}), status=404,
+                            mimetype='application/json')
+        except requests.exceptions.RequestException as err:
+            # catastrophic error. bail.
+            return Response(json_util.dumps({'response': str(err)}), status=404,
+                            mimetype='application/json')
+            sys.exit(1)
+
         response = response_bytes.decode("utf-8")
         error_message = 'Invalid token.'
         if response != error_message:
-            kwargs['payload'] = response #save the payload(user_id) in kwargs array
+            kwargs['payload'] = response # save the payload(user_id) in kwargs array
+            kwargs['token'] = token
         else:
-            return Response(json_util.dumps({'response': 'Invalid token! Please refresh log in.'}), status=404,
+            return Response(json_util.dumps({'response': 'Invalid or inexistent token! Please log in.'}), status=400,
                             mimetype='application/json')
         return f(*args, **kwargs)
     return wrapper
 
+
+#methods
+def authentication_function(user_id):
+    try:
+        # http communication to generate token when user does the login
+        response = requests.get('https://'+AUTH_HOST_IP+':5000/authentication', headers={'user_id': user_id }, verify=False).content
+    except requests.exceptions.Timeout:
+    # Maybe set up for a retry, or continue in a retry loop
+        return 'Server timeout.'
+    except requests.exceptions.TooManyRedirects:
+    # Tell the user their URL was bad and try a different one
+        return 'Impossible to find url.'
+    except requests.exceptions.RequestException as err:
+        # catastrophic error. bail.
+        return str(err)
+    token = response.decode("utf-8")
+    token_response = {'token':token}
+    return token_response
+
+
+def create_user_m(object_id, email, password, name, surname, obp_authorization):
+    mongoengine.connect(db='User_db', host='localhost', port=27017)
+    User(object_id, email, password, name, surname, None).save()
+
 app = Flask(__name__)
 CORS(app)
 app.config['SWAGGER'] = {
-    'title': 'Nearsoft Payment Provaider (User API)',
-    'description': 'This is User API of Nearsoft Payment Provaider',
+    'title': 'Nearsoft Payment Provider (User API)',
+    'description': 'This is User API of Nearsoft Payment Provider',
     'uiversion': 2,
     'email': "duarteafonsocosta@hotmail.com"
 }
@@ -70,6 +117,45 @@ swagger = Swagger(app, template={
         },
     },
 },)
+
+
+@app.before_first_request
+def verify_first_admin():  # Create first admin if db is empty
+    try:
+        user = mongobd_user.find({'email': "admin@admin.com"})
+        if user.count() == 0:
+            object_id = ObjectId()
+            email = 'admin@admin.com'
+            password = '123456'
+            name = 'admin'
+            username = 'admin'
+            create_user_m(object_id, email, password, name, username, None)
+
+            authentication = authentication_function(str(object_id)) # Get login token
+            print(authentication)
+            if "token" in authentication:
+                role_authorization = "tese2018"
+                role_authorization = generate_password_hash(role_authorization)  # Generation of authorization to create clients and first administrator. This is required because the role server needs to be closed
+                try:
+                    # http communication to generate token when user does the login
+                     requests.post('https://' + ROLE_HOST_IP + ':5005/role/merchant/permissions/user/'+str(object_id),
+                                            headers={'Authorization': authentication['token']}, verify=False)
+                except requests.exceptions.Timeout:
+                    # Maybe set up for a retry, or continue in a retry loop
+                    print('Server timeout.')
+                except requests.exceptions.TooManyRedirects:
+                    # Tell the user their URL was bad and try a different one
+                    print('Impossible to find url.')
+                except requests.exceptions.RequestException as err:
+                    # catastrophic error. bail.
+                    print(str(err))
+
+            else:
+                print(authentication)
+
+    except errors.ServerSelectionTimeoutError:
+        print('Mongodb is not running')
+
 
 @app.route('/user/', methods=['GET'])
 def welcome_user():
@@ -103,14 +189,38 @@ def create_user():
         return Response(json_util.dumps({'response': 'Passwords does not match'}), status=400,
                         mimetype='application/json')
 
+
+
     name = request_params['name']
     surname = request_params['surname']
     password = request_params['password']
     email = request_params['email']
+    role_authorization = "tese2018"
+    role_authorization = generate_password_hash(role_authorization)  # Generation of authorization to create clients and first administrator. This is required because the role server needs to be closed
+
 
     try:
-        mongoengine.connect(db='User_db', host='localhost', port=27017)
-        User(ObjectId(), email, password, name, surname, None).save()
+        object_id = ObjectId()
+        create_user_m(object_id, email, password, name, surname, None)
+
+        # http to generate costumer role
+        try:
+            requests.post('https://' + ROLE_HOST_IP + ':5005/role/customer/permissions/user/'+str(object_id),
+                          headers={'First_authorization': role_authorization},  verify=False)
+        except requests.exceptions.Timeout:
+            # Maybe set up for a retry, or continue in a retry loop
+            return Response(json_util.dumps({'response': 'Role server timeout.'}), status=404,
+                            mimetype='application/json')
+        except requests.exceptions.TooManyRedirects:
+            # Tell the user their URL was bad and try a different one
+            return Response(json_util.dumps({'response': 'Impossible to find url.'}), status=404,
+                            mimetype='application/json')
+        except requests.exceptions.RequestException as err:
+            # catastrophic error. bail.
+            return Response(json_util.dumps({'response': str(err)}), status=404,
+                            mimetype='application/json')
+
+
         return Response(json_util.dumps({'response': 'Successful operation'}),
                         status=200, mimetype='application/json')
     except (errors.DuplicateKeyError, mongoengine.errors.NotUniqueError):
@@ -127,6 +237,8 @@ def create_user():
 def login_user():
     request_params = request.form
     print(request_params)
+    password = request_params['password']
+    email = request_params['email']
     if 'email' not in request_params:
         return Response(json_util.dumps({'response': 'Missing parameter: email'}), status=400, mimetype='application'
                                                                                                         '/json')
@@ -134,10 +246,8 @@ def login_user():
         return Response(json_util.dumps({'response': 'Missing parameter: password'}), status=400,
                         mimetype='application/json')
 
-    password = request_params['password']
-    email = request_params['email']
     try:
-        existing_user = mongodb.find_one({'email': email})
+        existing_user = mongobd_user.find_one({'email': email})
         if existing_user is None:
             return Response(json_util.dumps({'response': 'Invalid email.'}), status=400,
                             mimetype='application/json')
@@ -148,27 +258,16 @@ def login_user():
         return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=404,
                     mimetype='application/json')
 
-
-
-    # http communication to generate token when user does the login
-    try:
-        response = requests.get('https://'+AUTH_HOST_IP+':5000/authentication', headers={'user_id': str(existing_user['_id'])}, verify=False).content
-    except requests.exceptions.Timeout:
-    # Maybe set up for a retry, or continue in a retry loop
-        return Response(json_util.dumps({'response': 'Server timeout.'}), status=404,
-                    mimetype='application/json')
-    except requests.exceptions.TooManyRedirects:
-    # Tell the user their URL was bad and try a different one
-        return Response(json_util.dumps({'response': 'Impossible to find url.'}), status=404,
-                    mimetype='application/json')
-    except requests.exceptions.RequestException as err:
-        # catastrophic error. bail.
-        return Response(json_util.dumps({'response': str(err)}), status=404,
+    authentication = authentication_function(str(existing_user['_id']))
+    if "token" in authentication:
+        return Response(json_util.dumps(authentication), status=200,
+                     mimetype='application/json')
+    else:
+        return Response(json_util.dumps({'response':authentication}), status=400,
                         mimetype='application/json')
-        sys.exit(1)
-    token = response.decode("utf-8")
-    return Response(json_util.dumps({'response': {'token': token}}), status=200,
-                    mimetype='application/json')
+
+
+
 
 
 @app.route('/user/all', methods=['GET'])
@@ -176,15 +275,15 @@ def login_user():
 # Handler for HTTP GET - "/user/all"
 def get_user():
     try:
-        users = mongodb.find({})
+        users = mongobd_user.find({})
         if users is None:
             return Response(json_util.dumps({'response': 'No users found'}),
-                            status=500, mimetype='application/json')
+                            status=400, mimetype='application/json')
         else:
             return Response(json_util.dumps(users), status=200,
                             mimetype='application/json')
     except errors.ServerSelectionTimeoutError:
-        return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=500,
+        return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=404,
                         mimetype='application/json')
 
 
@@ -198,7 +297,7 @@ def get_user():
 def get_current_user(**kwargs):
     user_id = kwargs['payload']
     try:
-        users = mongodb.find_one({'_id': ObjectId(user_id)})
+        users = mongobd_user.find_one({'_id': ObjectId(user_id)})
         if users is None:
             return Response(json_util.dumps({'response': 'No user found'}),
                             status=400, mimetype='application/json')
@@ -266,8 +365,8 @@ def obp_associate_user(**kwargs):
         print(ob_token)
         try:
             # future work, implementation of email confirmation mecanisme
-            mongodb.find_one_and_update({'_id': ObjectId(payload)},
-                                        {'$set': {'obp_authorization': ob_token}})
+            mongobd_user.find_one_and_update({'_id': ObjectId(payload)},
+                                             {'$set': {'obp_authorization': ob_token}})
             return Response(json_util.dumps({'response': 'Successful registration with your open bank account.'}),
                             status=200, mimetype='application/json')
         except (errors.DuplicateKeyError, mongoengine.errors.NotUniqueError):
@@ -289,7 +388,7 @@ def obp_associate_user(**kwargs):
 def get_obp_authorization(**kwargs):
     user_id = kwargs['payload']
     try:
-        user = mongodb.find_one({'_id': ObjectId(user_id)})
+        user = mongobd_user.find_one({'_id': ObjectId(user_id)})
         if user is None:
             return Response(json_util.dumps({'response': 'No user found'}),
                             status=400, mimetype='application/json')

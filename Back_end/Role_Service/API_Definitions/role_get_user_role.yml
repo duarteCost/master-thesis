@@ -1,0 +1,48 @@
+Get user permissions
+Get user permissions in Nearsoft Payment Provider
+
+---
+tags:
+- Role
+operationId: get_user_permisson
+produces:
+- application/json
+- application/xml
+parameters:
+- in: path
+  name: user_id
+  description: ID of user
+  required: true
+responses:
+  200:
+    description: Successful operation
+    schema:
+      $ref: '#/definitions/success_get_user_role'
+  400:
+    description: Missing or invalid credentials
+    schema:
+      $ref: '#/definitions/error40X'
+  404:
+    description: Bad request
+    schema:
+      $ref: '#/definitions/error40X'
+
+definitions:
+  success_get_user_role:
+    type: object
+    properties:
+      roles:
+        type: string
+        $ref: '#/definitions/role_name'
+    xml:
+      name: Role
+
+  role_name:
+      properties:
+        roles:
+          type: enum
+
+  error40X:
+    properties:
+      response:
+        type: string

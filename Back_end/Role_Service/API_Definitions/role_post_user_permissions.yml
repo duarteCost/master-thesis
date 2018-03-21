@@ -1,0 +1,44 @@
+Change user permissions
+Change user permissions in Nearsoft Payment Provider
+
+---
+tags:
+- Role
+operationId: post_user_permissions
+produces:
+- application/json
+- application/xml
+parameters:
+- in: path
+  name: role_name
+  description: Name of permission
+  required: true
+- in: path
+  name: user_id
+  description: Id of user
+  required: true
+responses:
+  200:
+    description: Successful operation
+    schema:
+      $ref: '#/definitions/success_post_user_role'
+  400:
+    description: Missing or invalid credentials
+    schema:
+      $ref: '#/definitions/error40X'
+  404:
+    description: Bad request
+    schema:
+      $ref: '#/definitions/error40X'
+
+definitions:
+  success_post_user_role:
+    type: object
+    properties:
+      response:
+        type: string
+
+  error40X:
+    properties:
+      response:
+        type: string

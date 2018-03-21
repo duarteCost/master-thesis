@@ -1,0 +1,52 @@
+Get all permissions
+Get all permissions in Nearsoft Payment Provider
+
+---
+tags:
+- Role
+operationId: all_permissions
+produces:
+- application/json
+- application/xml
+responses:
+  200:
+    description: Successful operation
+    schema:
+      $ref: '#/definitions/success_get_all_roles'
+  400:
+    description: Missing or invalid credentials
+    schema:
+      $ref: '#/definitions/error40X'
+  404:
+    description: Bad request
+    schema:
+      $ref: '#/definitions/error40X'
+
+definitions:
+  success_get_all_roles:
+    type: object
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      description:
+        type: string
+      users:
+        type: array
+        $ref: '#/definitions/user_id'
+      modifiedAt:
+        type: string
+        format: date-time
+    xml:
+      name: Role
+
+    user_id:
+      properties:
+        oid:
+          type: string
+
+  error40X:
+    properties:
+      response:
+        type: string

@@ -119,8 +119,8 @@ def set_baseurl_apiversion():
 app = Flask(__name__)
 CORS(app)
 app.config['SWAGGER'] = {
-    'title': 'Nearsoft Payment Provaider (PISP API)',
-    'description': 'This is PISP API of Nearsoft Payment Provaider',
+    'title': 'Nearsoft Payment Provider (PISP API)',
+    'description': 'This is PISP API of Nearsoft Payment Provider',
     'uiversion': 2,
     'email': "duarteafonsocosta@hotmail.com"
 }

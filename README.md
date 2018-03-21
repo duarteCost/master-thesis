@@ -10,7 +10,7 @@ This project is Payment Service Provider using PSD2
 ## How to run
 Below I will explain how to run the project
 ### BackEnd
-1. Fill the configurations files of each one Service
+1. Fill the configurations files of each one Services
     1. The default variables in all files is about the Services IP address, probably it is not necessary change
     2. In the OB_Service the OB variables is about Open Bank API it is not necessary change
 2. Run MongoDB with the command **mongod --dbpath _YOURDESIREDPATH_**

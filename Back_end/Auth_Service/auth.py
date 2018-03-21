@@ -13,8 +13,8 @@ JWT_EXP_DELTA_SECONDS = 120
 
 app = Flask(__name__)
 app.config['SWAGGER'] = {
-    'title': 'Nearsoft Payment Provaider (Auth API)',
-    'description': 'This is Auth API of Nearsoft Payment Provaider',
+    'title': 'Nearsoft Payment Provider (Auth API)',
+    'description': 'This is Auth API of Nearsoft Payment Provider',
     'uiversion': 2,
     'email': "duarteafonsocosta@hotmail.com"
 }

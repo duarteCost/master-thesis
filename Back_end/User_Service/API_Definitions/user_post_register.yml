@@ -1,5 +1,5 @@
 Create user account on Nearsoft Payment Provider
-Account creation at Nearsoft Payment Provaider to use Nearsoft payment services.
+Account creation at Nearsoft Payment Provider to use Nearsoft payment services.
 ---
 tags:
 - User
@@ -33,7 +33,7 @@ parameters:
 
 responses:
   200:
-    description: Successful registration in Nearsoft Payment Provaider
+    description: Successful registration in Nearsoft Payment Provider
     schema:
       $ref: '#/definitions/success_user_register'
   400:

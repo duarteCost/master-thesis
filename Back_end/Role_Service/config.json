@@ -1,0 +1,7 @@
+{
+  "DEFAULT": {
+    "AUTH_HOST_IP": "localhost",
+    "USER_HOST_IP": "localhost",
+    "ROLE_HOST_IP": "localhost"
+  }
+}

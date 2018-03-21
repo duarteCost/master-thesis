@@ -1,0 +1,44 @@
+Post new permission
+Post new permission in Nearsoft Payment Provider
+
+---
+tags:
+- Role
+operationId: post_permission
+produces:
+- application/json
+- application/xml
+parameters:
+- in: formData
+  name: name
+  description: Name of permission
+  required: true
+- in: formData
+  name: description
+  description: Descriptions of permission
+  required: true
+responses:
+  200:
+    description: Successful operation
+    schema:
+      $ref: '#/definitions/success_post_role'
+  400:
+    description: Missing or invalid credentials
+    schema:
+      $ref: '#/definitions/error40X'
+  404:
+    description: Bad request
+    schema:
+      $ref: '#/definitions/error40X'
+
+definitions:
+  success_post_role:
+    type: object
+    properties:
+      response:
+        type: string
+
+  error40X:
+    properties:
+      response:
+        type: string

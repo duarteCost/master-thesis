@@ -1,7 +1,6 @@
 import datetime
 
 from mongoengine import *
-from werkzeug.security import generate_password_hash
 
 
 class Bank_account(Document):
