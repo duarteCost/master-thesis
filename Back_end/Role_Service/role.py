@@ -5,7 +5,7 @@ import bson
 import mongoengine
 import requests
 import ssl
-import Lib.role_lib
+import Role_Lib.role_lib
 from functools import wraps
 from bson import ObjectId, json_util
 from flask import Flask, request, Response, json
@@ -16,7 +16,7 @@ from flasgger import Swagger
 from flasgger import swag_from
 from werkzeug.security import check_password_hash
 
-role_lib = Lib.role_lib
+role_lib = Role_Lib.role_lib
 mongobd_role = MongoClient('localhost', 27017).Role.role
 time.sleep(5)
 context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)

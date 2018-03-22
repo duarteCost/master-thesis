@@ -10,8 +10,8 @@ from pymongo import MongoClient
 from flasgger import swag_from
 from flasgger import Swagger
 
-import Lib.obp
-obp = Lib.obp
+import PISP_Lib.obp
+obp = PISP_Lib.obp
 
 mongodb = MongoClient('localhost', 27017).PISP_OB_UserDB.ob_account
 time.sleep(5)

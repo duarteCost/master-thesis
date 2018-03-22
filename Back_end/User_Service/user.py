@@ -4,7 +4,7 @@ import mongoengine
 import requests
 import sys
 import ssl
-import Lib.user_lib
+import User_Lib.user_lib
 from functools import wraps
 from bson import ObjectId, json_util
 from flask import Flask, request, Response, json
@@ -14,7 +14,7 @@ from flasgger import swag_from
 from werkzeug.security import check_password_hash, generate_password_hash
 from flasgger import Swagger
 
-user_lib = Lib.user_lib
+user_lib = User_Lib.user_lib
 mongobd_user = MongoClient('localhost', 27017).User_db.user
 time.sleep(5)
 

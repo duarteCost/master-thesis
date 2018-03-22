@@ -12,8 +12,8 @@ from AISP_Models.aisp_payment_account import Bank_account
 from flasgger import swag_from
 from flasgger import Swagger
 
-import Lib.obp
-obp = Lib.obp
+import AISP_Lib.obp
+obp = AISP_Lib.obp
 
 mongodb = MongoClient('localhost', 27017).Aisp_payment_account_db.bank_account
 time.sleep(5)
@@ -36,8 +36,6 @@ def Authorization(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
         token = request.headers.get('Authorization')
-        token = request.headers.get('Authorization')
-
         try:
             response_bytes = requests.get('https://' + AUTH_HOST_IP + ':5000/authorization',
                                           headers={'Authorization': token},
