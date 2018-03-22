@@ -5,6 +5,7 @@ import bson
 import mongoengine
 import requests
 import ssl
+import Lib.role_lib
 from functools import wraps
 from bson import ObjectId, json_util
 from flask import Flask, request, Response, json
@@ -13,7 +14,9 @@ from pymongo import MongoClient, errors
 from Role_Models.role_model import Role
 from flasgger import Swagger
 from flasgger import swag_from
+from werkzeug.security import check_password_hash
 
+role_lib = Lib.role_lib
 mongobd_role = MongoClient('localhost', 27017).Role.role
 time.sleep(5)
 context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
@@ -64,47 +67,40 @@ def requires_roles(*roles):
     def wrapper(f):
         @wraps(f)
         def wrapped(*args, **kwargs):
-            user_id = kwargs['payload']
-            error = True
-            roles_all = get_roles()  # Get all roles
-            if 'roles' in roles_all:
-                user_roles_name = user_roles(roles_all, user_id)  # Get the name of all user roles
-            elif 'No roles found' in roles_all:
-                print('No roles found')
-            else:
-                print('Mongodb is not running')
-            print(roles)
-            for user_role in user_roles_name:  # Verify if user have a specific role
-                if user_role in roles:
-                    error = False
-                    break
+            print(request.headers.get('Role_authorization'))
+            role_authorization = request.headers.get('Role_authorization')
+            if role_authorization is None:
+                user_id = kwargs['payload']
+                error = True
+                roles_all = role_lib.get_roles(mongobd_role)  # Get all roles
+                if 'roles' in roles_all:
+                    user_roles_name = role_lib.user_roles(roles_all, user_id)  # Get the name of all user roles
+                elif 'No roles found' in roles_all:
+                    print('No roles found')
+                else:
+                    print('Mongodb is not running')
+                print(roles)
+                for user_role in user_roles_name:  # Verify if user have a specific role
+                    if user_role in roles:
+                        error = False
+                        break
 
-            if(error == True):
-                return Response(json_util.dumps({'response': 'You do not have the permissions of this role: '+str(roles)}), status=404,
-                                mimetype='application/json')
+                if (error == True):
+                    return Response(
+                        json_util.dumps({'response': 'You do not have the permissions of this role: ' + str(roles)}),
+                        status=404,
+                        mimetype='application/json')
+            elif(check_password_hash(role_authorization, "tese2018") is False):
+                return Response(
+                    json_util.dumps({'response': 'You do not have the permissions of this roles: ' + str(roles)}),
+                    status=404,
+                    mimetype='application/json')
+
             return f(*args, **kwargs)
         return wrapped
     return wrapper
 
-# methods
-def get_roles():
-    try:
-        roles = mongobd_role.find({})
-        if roles.count() == 0:
-            return 'No roles found'
-        else:
-            return {'roles': roles}
-    except errors.ServerSelectionTimeoutError:
-        return 'Mongodb is not running'
 
-def user_roles(roles, user_id):
-    user_roles_name = []
-    roles = roles['roles']
-    for role in roles:
-        if "users" in role:
-            if ObjectId(user_id) in role['users']:
-                user_roles_name.append(role['name'])
-    return user_roles_name
 
 app = Flask(__name__)
 CORS(app)
@@ -152,9 +148,9 @@ def welcome_role():
 @Authorization
 @swag_from('API_Definitions/role_get_user_role.yml')
 def get_current_user_role(user_id, **kwargs):
-    roles = get_roles()
+    roles = role_lib.get_roles(mongobd_role)
     if 'roles' in roles:
-        user_roles_name = user_roles(roles, user_id)
+        user_roles_name = role_lib.user_roles(roles, user_id)
         return Response(json_util.dumps({'roles': user_roles_name}), status=200,
                         mimetype='application/json')
     elif 'No roles found' in roles:
@@ -170,7 +166,7 @@ def get_current_user_role(user_id, **kwargs):
 @Authorization
 @swag_from('API_Definitions/role_get_all.yml')
 def get_all_role(**kwargs):
-    roles = get_roles()
+    roles = role_lib.get_roles(mongobd_role)
     if 'roles' in roles:
         return Response(json_util.dumps(roles), status=200,
                         mimetype='application/json')

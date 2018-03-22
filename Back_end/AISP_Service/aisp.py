@@ -36,6 +36,7 @@ def Authorization(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
         token = request.headers.get('Authorization')
+        token = request.headers.get('Authorization')
 
         try:
             response_bytes = requests.get('https://' + AUTH_HOST_IP + ':5000/authorization',

@@ -4,16 +4,17 @@ import mongoengine
 import requests
 import sys
 import ssl
+import Lib.user_lib
 from functools import wraps
 from bson import ObjectId, json_util
 from flask import Flask, request, Response, json
 from flask_cors import CORS
 from pymongo import MongoClient, errors
 from flasgger import swag_from
-from User_Models.user_model import User
 from werkzeug.security import check_password_hash, generate_password_hash
 from flasgger import Swagger
 
+user_lib = Lib.user_lib
 mongobd_user = MongoClient('localhost', 27017).User_db.user
 time.sleep(5)
 
@@ -53,7 +54,6 @@ def Authorization(f):
             # catastrophic error. bail.
             return Response(json_util.dumps({'response': str(err)}), status=404,
                             mimetype='application/json')
-            sys.exit(1)
 
         response = response_bytes.decode("utf-8")
         error_message = 'Invalid token.'
@@ -67,28 +67,6 @@ def Authorization(f):
     return wrapper
 
 
-#methods
-def authentication_function(user_id):
-    try:
-        # http communication to generate token when user does the login
-        response = requests.get('https://'+AUTH_HOST_IP+':5000/authentication', headers={'user_id': user_id }, verify=False).content
-    except requests.exceptions.Timeout:
-    # Maybe set up for a retry, or continue in a retry loop
-        return 'Server timeout.'
-    except requests.exceptions.TooManyRedirects:
-    # Tell the user their URL was bad and try a different one
-        return 'Impossible to find url.'
-    except requests.exceptions.RequestException as err:
-        # catastrophic error. bail.
-        return str(err)
-    token = response.decode("utf-8")
-    token_response = {'token':token}
-    return token_response
-
-
-def create_user_m(object_id, email, password, name, surname, obp_authorization):
-    mongoengine.connect(db='User_db', host='localhost', port=27017)
-    User(object_id, email, password, name, surname, None).save()
 
 app = Flask(__name__)
 CORS(app)
@@ -129,29 +107,15 @@ def verify_first_admin():  # Create first admin if db is empty
             password = '123456'
             name = 'admin'
             username = 'admin'
-            create_user_m(object_id, email, password, name, username, None)
-
-            authentication = authentication_function(str(object_id)) # Get login token
-            print(authentication)
-            if "token" in authentication:
-                role_authorization = "tese2018"
-                role_authorization = generate_password_hash(role_authorization)  # Generation of authorization to create clients and first administrator. This is required because the role server needs to be closed
-                try:
-                    # http communication to generate token when user does the login
-                     requests.post('https://' + ROLE_HOST_IP + ':5005/role/merchant/permissions/user/'+str(object_id),
-                                            headers={'Authorization': authentication['token']}, verify=False)
-                except requests.exceptions.Timeout:
-                    # Maybe set up for a retry, or continue in a retry loop
-                    print('Server timeout.')
-                except requests.exceptions.TooManyRedirects:
-                    # Tell the user their URL was bad and try a different one
-                    print('Impossible to find url.')
-                except requests.exceptions.RequestException as err:
-                    # catastrophic error. bail.
-                    print(str(err))
-
+            create_user_status = user_lib.create_user_m(object_id, email, password, name, username, None) #Create user through Lib method
+            if create_user_status == 'Success':
+                authentication = user_lib.authentication_function(str(object_id),AUTH_HOST_IP) # Get login token through Lib method
+                if "token" in authentication:
+                    print(user_lib.associate_role(authentication['token'], "merchant", object_id, ROLE_HOST_IP)) # Save user role in Role micro server through Lib method
+                else:
+                    print(authentication)
             else:
-                print(authentication)
+                print(create_user_status)
 
     except errors.ServerSelectionTimeoutError:
         print('Mongodb is not running')
@@ -189,40 +153,29 @@ def create_user():
         return Response(json_util.dumps({'response': 'Passwords does not match'}), status=400,
                         mimetype='application/json')
 
-
-
     name = request_params['name']
     surname = request_params['surname']
     password = request_params['password']
     email = request_params['email']
-    role_authorization = "tese2018"
-    role_authorization = generate_password_hash(role_authorization)  # Generation of authorization to create clients and first administrator. This is required because the role server needs to be closed
-
-
     try:
         object_id = ObjectId()
-        create_user_m(object_id, email, password, name, surname, None)
+        create_user_status = user_lib.create_user_m(object_id, email, password, name, surname, None) # Create user through Lib method
+        if create_user_status == "Success":
+            authentication = user_lib.authentication_function(str(object_id), AUTH_HOST_IP) # Get login token through Lib method
+            if "token" in authentication:
+                status = user_lib.associate_role(authentication['token'], "customer", object_id, ROLE_HOST_IP)  # Save user role in Role micro server through Lib method
+                if (status == "Success"):
+                    return Response(json_util.dumps({'response': 'Successful operation'}),
+                                    status=200, mimetype='application/json')
+                else:
+                    return Response(json_util.dumps({'response': status}),
+                                    status=404, mimetype='application/json')
+            else:
+                return Response(json_util.dumps({'response': authentication}),
+                         status=404, mimetype='application/json')
+        return Response(json_util.dumps({'response': create_user_status}),
+                        status=404, mimetype='application/json')
 
-        # http to generate costumer role
-        try:
-            requests.post('https://' + ROLE_HOST_IP + ':5005/role/customer/permissions/user/'+str(object_id),
-                          headers={'First_authorization': role_authorization},  verify=False)
-        except requests.exceptions.Timeout:
-            # Maybe set up for a retry, or continue in a retry loop
-            return Response(json_util.dumps({'response': 'Role server timeout.'}), status=404,
-                            mimetype='application/json')
-        except requests.exceptions.TooManyRedirects:
-            # Tell the user their URL was bad and try a different one
-            return Response(json_util.dumps({'response': 'Impossible to find url.'}), status=404,
-                            mimetype='application/json')
-        except requests.exceptions.RequestException as err:
-            # catastrophic error. bail.
-            return Response(json_util.dumps({'response': str(err)}), status=404,
-                            mimetype='application/json')
-
-
-        return Response(json_util.dumps({'response': 'Successful operation'}),
-                        status=200, mimetype='application/json')
     except (errors.DuplicateKeyError, mongoengine.errors.NotUniqueError):
         return Response(json_util.dumps({'response': 'User already exists'}),
                         status=400, mimetype='application/json')
@@ -257,8 +210,9 @@ def login_user():
     except errors.ServerSelectionTimeoutError:
         return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=404,
                     mimetype='application/json')
-
-    authentication = authentication_function(str(existing_user['_id']))
+    user_id = str(existing_user['_id'])
+    authentication = user_lib.authentication_function(user_id,
+                                                      AUTH_HOST_IP)  # Get login token through Lib method
     if "token" in authentication:
         return Response(json_util.dumps(authentication), status=200,
                      mimetype='application/json')
