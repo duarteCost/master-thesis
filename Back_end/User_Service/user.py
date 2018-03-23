@@ -35,7 +35,6 @@ CONSUMER_KEY = config['OB']['CONSUMER_KEY']
 def Authorization(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
-        print("autho")
         token = request.headers.get('Authorization')
 
         try:
@@ -64,6 +63,59 @@ def Authorization(f):
             return Response(json_util.dumps({'response': 'Invalid or inexistent token! Please log in.'}), status=400,
                             mimetype='application/json')
         return f(*args, **kwargs)
+    return wrapper
+
+
+def requires_roles(*roles):
+    def wrapper(f):
+        @wraps(f)
+        def wrapped(*args, **kwargs):
+            user_id = kwargs['payload']
+            token = request.headers.get('Authorization')
+            error = True
+
+            try:
+                response_user_roles_bytes = requests.get('https://' + ROLE_HOST_IP + ':5005/role/user/'+user_id,
+                                              headers={'Authorization': token},
+                                              verify=False).content  # Get user Roles in Role server
+
+                user_roles = json.loads(response_user_roles_bytes.decode('utf-8'))
+                if 'roles' in user_roles:  # Exist roles for that user
+                    print(roles)
+                    print(user_roles)
+                    user_roles = user_roles['roles']
+                    for user_role in user_roles:  # Verify if user have a specific role
+                        print(user_role)
+                        if user_role in roles:
+                            error = False
+                            break
+                elif 'No roles found' in user_roles:
+                    print('No roles found for that user!')
+                else:
+                    print('Mongodb is not running')
+                print(roles)
+
+            except requests.exceptions.Timeout:
+                # Maybe set up for a retry, or continue in a retry loop
+                return Response(json_util.dumps({'response': 'Server timeout.'}), status=404,
+                                mimetype='application/json')
+            except requests.exceptions.TooManyRedirects:
+                # Tell the user their URL was bad and try a different one
+                return Response(json_util.dumps({'response': 'Impossible to find url.'}), status=404,
+                                mimetype='application/json')
+            except requests.exceptions.RequestException as err:
+                # catastrophic error. bail.
+                return Response(json_util.dumps({'response': str(err)}), status=404,
+                                mimetype='application/json')
+
+            if (error == True):
+                return Response(
+                    json_util.dumps({'response': 'You do not have the permissions of this role: ' + str(roles[0])}),
+                    status=404,
+                    mimetype='application/json')
+
+            return f(*args, **kwargs)
+        return wrapped
     return wrapper
 
 
@@ -225,9 +277,11 @@ def login_user():
 
 
 @app.route('/user/all', methods=['GET'])
+@Authorization
+@requires_roles('merchant')
 @swag_from('API_Definitions/user_get_all.yml')
 # Handler for HTTP GET - "/user/all"
-def get_user():
+def get_user(**kwargs):
     try:
         users = mongobd_user.find({})
         if users is None:
@@ -247,6 +301,7 @@ def get_user():
 #find corrent user
 @app.route('/user/my/account', methods=['GET'])
 @Authorization
+@requires_roles('customer', 'merchant')
 @swag_from('API_Definitions/user_get_account.yml')
 def get_current_user(**kwargs):
     user_id = kwargs['payload']
@@ -265,6 +320,7 @@ def get_current_user(**kwargs):
 
 @app.route('/user/obp/associate', methods=['POST'])
 @Authorization
+@requires_roles('customer', 'merchant')
 @swag_from('API_Definitions/user_post_obp_associate.yml')
 def obp_associate_user(**kwargs):
     payload = kwargs['payload'];  # user id
@@ -338,6 +394,7 @@ def obp_associate_user(**kwargs):
 # Check if user is associated on open bank project
 @app.route('/user/account/obp/authorization', methods=['GET'])
 @Authorization
+@requires_roles('customer', 'merchant')
 @swag_from('API_Definitions/user_get_obp_authorization.yml')
 def get_obp_authorization(**kwargs):
     user_id = kwargs['payload']

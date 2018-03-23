@@ -1,5 +1,5 @@
-Get permission
-Get permission in Nearsoft Payment Provider
+Get default receiver bank account
+Return the default receiver bank account previously set by the merchant
 
 **Authorization is mandatory**
 
@@ -8,24 +8,20 @@ Get permission in Nearsoft Payment Provider
   2 - Copy token from response
   3 - Click on authorize on this page
   4 - Paste the token into the text input
-
 ---
 tags:
-- Role
-operationId: get_permisson
+- PISP
+security:
+  - JWT: []
+operationId: receiver
 produces:
 - application/json
 - application/xml
-parameters:
-- in: path
-  name: role_name
-  description: Name of role
-  required: true
 responses:
   200:
     description: Successful operation
     schema:
-      $ref: '#/definitions/success_get_role'
+      $ref: '#/definitions/success_get_receiver_account'
   400:
     description: Missing or invalid credentials
     schema:
@@ -36,28 +32,19 @@ responses:
       $ref: '#/definitions/error40X'
 
 definitions:
-  success_get_role:
-    type: object
-    properties:
-      id:
-        type: string
-      name:
-        type: string
-      description:
-        type: string
-      users:
-        type: array
-        $ref: '#/definitions/user_id'
-      modifiedAt:
-        type: string
-        format: date-time
-    xml:
-      name: Role
 
-  user_id:
-      properties:
-        oid:
-          type: string
+  success_get_receiver_account:
+    properties:
+      response:
+        type: array
+        $ref: '#/definitions/response_get_receiver_bank_account_default'
+
+  response_get_receiver_bank_account_default:
+    properties:
+      bank_id:
+        type: string
+      account_id:
+        type: string
 
   error40X:
     properties:

@@ -27,6 +27,7 @@ with open('config.json', 'r') as f:
 
 AUTH_HOST_IP = config['DEFAULT']['AUTH_HOST_IP']
 USER_HOST_IP = config['DEFAULT']['USER_HOST_IP']
+ROLE_HOST_IP = config['DEFAULT']['ROLE_HOST_IP']
 OB_API_HOST = config['OB']['OB_API_HOST']
 API_VERSION = config['OB']['API_VERSION']
 
@@ -66,9 +67,6 @@ def Authorization(f):
     return wrapper
 
 
-
-
-
 def OB_Authorization(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
@@ -92,7 +90,6 @@ def OB_Authorization(f):
             # catastrophic error. bail.
             return Response(json_util.dumps({'response': str(err)}), status=404,
                             mimetype='application/json')
-            sys.exit(1)
 
         response = response_bytes.decode("utf-8")
         response = json.loads(response)
@@ -109,6 +106,62 @@ def OB_Authorization(f):
         return f(*args, **kwargs)
     return wrapper
 
+
+def requires_roles(*roles):
+    def wrapper(f):
+        @wraps(f)
+        def wrapped(*args, **kwargs):
+            user_id = kwargs['payload']
+            token = request.headers.get('Authorization')
+            error = True
+
+            try:
+                response_user_roles_bytes = requests.get('https://' + ROLE_HOST_IP + ':5005/role/user/'+user_id,
+                                              headers={'Authorization': token},
+                                              verify=False).content  # Get user Roles in Role server
+
+                user_roles = json.loads(response_user_roles_bytes.decode('utf-8'))
+                if 'roles' in user_roles:  # Exist roles for that user
+                    print(roles)
+                    print(user_roles)
+                    user_roles = user_roles['roles']
+                    for user_role in user_roles:  # Verify if user have a specific role
+                        print(user_role)
+                        if user_role in roles:
+                            error = False
+                            break
+                elif 'No roles found' in user_roles:
+                    print('No roles found for that user!')
+                else:
+                    print('Mongodb is not running')
+                print(roles)
+
+            except requests.exceptions.Timeout:
+                # Maybe set up for a retry, or continue in a retry loop
+                return Response(json_util.dumps({'response': 'Server timeout.'}), status=404,
+                                mimetype='application/json')
+            except requests.exceptions.TooManyRedirects:
+                # Tell the user their URL was bad and try a different one
+                return Response(json_util.dumps({'response': 'Impossible to find url.'}), status=404,
+                                mimetype='application/json')
+            except requests.exceptions.RequestException as err:
+                # catastrophic error. bail.
+                return Response(json_util.dumps({'response': str(err)}), status=404,
+                                mimetype='application/json')
+
+            if (error == True):
+                return Response(
+                    json_util.dumps({'response': 'You do not have the permissions of this role: ' + str(roles[0])}),
+                    status=404,
+                    mimetype='application/json')
+
+            return f(*args, **kwargs)
+        return wrapped
+    return wrapper
+
+
+
+#methods
 def set_baseurl_apiversion():
     obp.setBaseUrl(OB_API_HOST)
     obp.setApiVersion(API_VERSION)
@@ -157,6 +210,7 @@ def welcome_ob():
 @app.route('/aisp/payment/bank/account/default', methods=['POST'])
 @Authorization
 @OB_Authorization
+@requires_roles('customer', 'merchant')
 @swag_from('API_Definitions/aisp_post_payment_bank_account_default.yml')
 def post_my_default_payment_account(**kwargs):
     payload = kwargs['payload'];  # user id
@@ -192,17 +246,12 @@ def post_my_default_payment_account(**kwargs):
         return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=404,
                         mimetype='application/json')
 
-    return Response(json_util.dumps({'response': 'Same error occurred!'}),
-                status=400, mimetype='application/json')
-
-
-
-
 
 # Get default payment account
 @app.route('/aisp/payment/bank/account/default', methods=['GET'])
 @Authorization
 @OB_Authorization
+@requires_roles('customer', 'merchant')
 @swag_from('API_Definitions/aisp_get_payment_bank_account_default.yml')
 def get_my_default_payment_account(**kwargs):
     user_id = kwargs['payload']
@@ -219,42 +268,12 @@ def get_my_default_payment_account(**kwargs):
         return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=404,
                         mimetype='application/json')
 
-# @app.route('/aisp/payment/bank/account/default/<id>', methods=['PUT'])
-# @Authorization
-# @OB_Authorization
-# @swag_from('API_Definitions/aisp_update_payment_bank_account_default.yml')
-# def update_my_default_payment_account(id,**kwargs):
-#     request_params = request.form
-#     print(request_params)
-#     if 'bank_id' not in request_params:
-#         return Response(json_util.dumps({'response': 'Missing parameter: username'}), status=400,
-#                         mimetype='application/json')
-#     elif 'account_id' not in request_params:
-#         return Response(json_util.dumps({'response': 'Missing parameter: password'}), status=400,
-#                         mimetype='application/json')
-#     bank_id = request_params['bank_id']
-#     account_id = request_params['account_id']
-#
-#     try:
-#         # future work, implementation of email confirmation mecanisme
-#         mongodb.find_one_and_update({'_id': ObjectId(id)},
-#                                     {'$set': {'bank_id': bank_id, 'account_id' : account_id}})
-#         return Response(json_util.dumps({'response': 'Successful registration with your open bank account.'}),
-#                         status=200, mimetype='application/json')
-#     except (errors.DuplicateKeyError, mongoengine.errors.NotUniqueError):
-#         return Response(json_util.dumps({'response': 'This open bank account already exists.'}),
-#                         status=400, mimetype='application/json')
-#     except errors.ServerSelectionTimeoutError:
-#         return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=404,
-#                         mimetype='application/json')
-
-
-
 
 # This route gets all accounts in different banks
 @app.route('/aisp/bank/accounts', methods=['GET'])
 @Authorization
 @OB_Authorization
+@requires_roles('customer', 'merchant')
 @swag_from('API_Definitions/aisp_get_bank_accounts.yml')
 def get_my_bank_accounts(**kwargs):
     set_baseurl_apiversion()
@@ -278,6 +297,7 @@ def get_my_bank_accounts(**kwargs):
 @app.route('/aisp/payment/bank/accounts', methods=['GET'])
 @Authorization
 @OB_Authorization
+@requires_roles('customer', 'merchant')
 @swag_from('API_Definitions/aisp_get_payment_bank_accounts.yml')
 def define_avilable_accounts(**kwargs):
     set_baseurl_apiversion()
@@ -295,7 +315,7 @@ def define_avilable_accounts(**kwargs):
         our_bank = bank_account['our_bank']  # define default ask professor
         our_account = bank_account['our_account']  # define default ask professor
         account_details = obp.getAccountById(our_bank, our_account, dl_token)
-        if request.args['amount'] <=  account_details['balance']['amount']:
+        if request.args['amount'] <= account_details['balance']['amount']:
             available_banks_accounts.append({'bank_id': account_details['bank_id'], 'account_id': account_details['id'],
                                          'balance' : account_details['balance']})
     print(available_banks_accounts)

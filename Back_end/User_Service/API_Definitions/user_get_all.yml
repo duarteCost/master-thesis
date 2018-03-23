@@ -2,6 +2,7 @@ Get all users
 Get all users in Nearsoft Payment Provider Account. Test route
 
 **Authorization is mandatory**
+**Merchant role mandatory**
 
 **To get athorization:**
   1 - [Login](https://localhost:5001/apidocs/#!/user/login)

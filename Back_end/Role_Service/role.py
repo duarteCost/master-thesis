@@ -87,12 +87,12 @@ def requires_roles(*roles):
 
                 if (error == True):
                     return Response(
-                        json_util.dumps({'response': 'You do not have the permissions of this role: ' + str(roles)}),
+                        json_util.dumps({'response': 'You do not have the permissions of this role: ' + str(roles[0])}),
                         status=404,
                         mimetype='application/json')
             elif(check_password_hash(role_authorization, "tese2018") is False):
                 return Response(
-                    json_util.dumps({'response': 'You do not have the permissions of this roles: ' + str(roles)}),
+                    json_util.dumps({'response': 'You do not have the permissions of this roles: ' + str(roles[0])}),
                     status=404,
                     mimetype='application/json')
 
@@ -136,7 +136,7 @@ def verify_db():
     if roles.count() == 0:
         mongoengine.connect(db='Role', host='localhost', port=27017)
         Role(ObjectId(), "merchant", "Merchant role").save()
-        Role(ObjectId(), "customer", "Costumer role").save()
+        Role(ObjectId(), "customer", "Customer role").save()
 
 @app.route('/', methods=['GET'])
 def welcome_role():
@@ -146,6 +146,7 @@ def welcome_role():
 # Return all user roles
 @app.route('/role/user/<user_id>', methods = ['GET'])
 @Authorization
+@requires_roles('merchant', 'customer')
 @swag_from('API_Definitions/role_get_user_role.yml')
 def get_current_user_role(user_id, **kwargs):
     roles = role_lib.get_roles(mongobd_role)
@@ -164,11 +165,12 @@ def get_current_user_role(user_id, **kwargs):
 
 @app.route('/role/all', methods=['GET'])
 @Authorization
+@requires_roles('merchant', 'customer')
 @swag_from('API_Definitions/role_get_all.yml')
 def get_all_role(**kwargs):
     roles = role_lib.get_roles(mongobd_role)
     if 'roles' in roles:
-        return Response(json_util.dumps(roles), status=200,
+        return Response(json_util.dumps({'roles':roles}), status=200,
                         mimetype='application/json')
     elif 'No roles found' in roles:
         return Response(json_util.dumps({'response': 'No roles found'}),
@@ -184,6 +186,7 @@ def get_all_role(**kwargs):
 
 @app.route('/role/<role_name>', methods=['GET'])
 @Authorization
+@requires_roles('merchant', 'customer')
 @swag_from('API_Definitions/role_get_role.yml')
 def get_role(role_name, **kwargs):
     print(role_name)
@@ -201,6 +204,7 @@ def get_role(role_name, **kwargs):
 
 @app.route('/role', methods=['POST'])
 @Authorization
+@requires_roles('merchant')
 @swag_from('API_Definitions/role_post_role.yml')
 def create_role(**kwargs):
     request_params = request.form

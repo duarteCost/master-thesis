@@ -1,6 +1,14 @@
 Get user permissions
 Get user permissions in Nearsoft Payment Provider
 
+**Authorization is mandatory**
+
+**To get athorization:**
+  1 - [Login](https://localhost:5001/apidocs/#!/user/login)
+  2 - Copy token from response
+  3 - Click on authorize on this page
+  4 - Paste the token into the text input
+
 ---
 tags:
 - Role

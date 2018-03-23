@@ -1,5 +1,8 @@
-Post new permission
-Post new permission in Nearsoft Payment Provider
+Post default receiver bank account
+With this route the merchant can define or update (In this case, the receiver bank account has already been defined)
+the receiver  bank account.
+There are  2  parameters related to the merchat, which are the bank_id corresponding to the bank id of receiver bank
+ and account_id that corresponds to the account id of receiver account who will receive the money.
 
 **Authorization is mandatory**
 
@@ -8,28 +11,29 @@ Post new permission in Nearsoft Payment Provider
   2 - Copy token from response
   3 - Click on authorize on this page
   4 - Paste the token into the text input
-
 ---
 tags:
-- Role
-operationId: post_permission
+- PISP
+security:
+  - JWT: []
+operationId: post_receiver_account
 produces:
 - application/json
 - application/xml
 parameters:
 - in: formData
-  name: name
-  description: Name of permission
+  name: bank_id
+  description: Id of the paying bank
   required: true
 - in: formData
-  name: description
-  description: Descriptions of permission
+  name: account_id
+  description: Id of the paying account
   required: true
 responses:
   200:
     description: Successful operation
     schema:
-      $ref: '#/definitions/success_post_role'
+      $ref: '#/definitions/success_post_receiver_bank_account'
   400:
     description: Missing or invalid credentials
     schema:
@@ -40,8 +44,7 @@ responses:
       $ref: '#/definitions/error40X'
 
 definitions:
-  success_post_role:
-    type: object
+  success_post_receiver_bank_account:
     properties:
       response:
         type: string
