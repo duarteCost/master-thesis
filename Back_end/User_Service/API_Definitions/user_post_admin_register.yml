@@ -1,0 +1,57 @@
+Create admin account on Nearsoft Payment Provider
+Admin account creation at Nearsoft Payment Provider to manage all services.
+---
+tags:
+- User
+summary: Create admin account on Nearsoft Payment Provider
+description: Create Admin.
+operationId: register
+produces:
+- application/json
+- application/xml
+parameters:
+- in: formData
+  name: name
+  description: Admin's name
+  required: true
+- in: formData
+  name: surname
+  description: Admin's surname
+  required: true
+- in: formData
+  name: email
+  description: Admin's email
+  required: true
+- in: formData
+  name: password
+  description: Admin's password
+  required: true
+- in: formData
+  name: confirm-password
+  description: Confirme password of account
+  required: true
+
+responses:
+  200:
+    description: Successful registration in Nearsoft Payment Provider
+    schema:
+      $ref: '#/definitions/success_admin_register'
+  400:
+    description: Missing or invalid credentials
+    schema:
+      $ref: '#/definitions/error40X'
+  404:
+    description: Bad request
+    schema:
+      $ref: '#/definitions/error40X'
+
+definitions:
+  success_admin_register:
+    properties:
+      response:
+        type: string
+
+  error40X:
+    properties:
+      response:
+        type: string

@@ -213,7 +213,7 @@ def create_role(**kwargs):
         return Response(json_util.dumps({'response': 'Missing parameter: name'}), status=400,
                         mimetype='application/json')
     elif 'description' not in request_params:
-        return Response(json_util.dumps({'response': 'Missing parameter: surname'}), status=400,
+        return Response(json_util.dumps({'response': 'Missing parameter: description'}), status=400,
                         mimetype='application/json')
 
     name = request_params['name']

@@ -149,28 +149,61 @@ swagger = Swagger(app, template={
 },)
 
 
-@app.before_first_request
-def verify_first_admin():  # Create first admin if db is empty
-    try:
-        user = mongobd_user.find({'email': "admin@admin.com"})
-        if user.count() == 0:
-            object_id = ObjectId()
-            email = 'admin@admin.com'
-            password = '123456'
-            name = 'admin'
-            username = 'admin'
-            create_user_status = user_lib.create_user_m(object_id, email, password, name, username, None) #Create user through Lib method
-            if create_user_status == 'Success':
-                authentication = user_lib.authentication_function(str(object_id),AUTH_HOST_IP) # Get login token through Lib method
-                if "token" in authentication:
-                    print(user_lib.associate_role(authentication['token'], "merchant", object_id, ROLE_HOST_IP)) # Save user role in Role micro server through Lib method
-                else:
-                    print(authentication)
-            else:
-                print(create_user_status)
+@app.route('/user/admin/register', methods=['POST'])
+@swag_from('API_Definitions/user_post_admin_register.yml')
+def create_admin():  # Create admin user, need to be added security parameters
+    request_params = request.form
+    print(request_params)
+    if 'name' not in request_params:
+        return Response(json_util.dumps({'response': 'Missing parameter: name'}), status=400,
+                        mimetype='application/json')
+    elif 'surname' not in request_params:
+        return Response(json_util.dumps({'response': 'Missing parameter: surname'}), status=400,
+                        mimetype='application/json')
+    elif 'email' not in request_params:
+        return Response(json_util.dumps({'response': 'Missing parameter: email'}), status=400,
+                        mimetype='application/json')
+    elif 'password' not in request_params:
+        return Response(json_util.dumps({'response': 'Missing parameter: password'}), status=400,
+                        mimetype='application/json')
+    elif 'confirm-password' not in request_params:
+        return Response(json_util.dumps({'response': 'Missing parameter: confirm password'}), status=400,
+                        mimetype='application/json')
+    elif request_params['password'] != request_params['confirm-password']:
+        return Response(json_util.dumps({'response': 'Passwords does not match'}), status=400,
+                        mimetype='application/json')
 
+    name = request_params['name']
+    surname = request_params['surname']
+    password = request_params['password']
+    email = request_params['email']
+    object_id = ObjectId()
+
+    try:
+        create_user_status = user_lib.create_user_m(object_id, email, password, name, surname, None) # Create user through Lib method
+        if create_user_status == "Success":
+            authentication = user_lib.authentication_function(str(object_id), AUTH_HOST_IP) # Get login token through Lib method
+            if "token" in authentication:
+                status_custumer = user_lib.associate_role(authentication['token'], "customer", object_id, ROLE_HOST_IP)  # Save admin "customer" role in Role micro server through Lib method
+                status_merchant = user_lib.associate_role(authentication['token'], "merchant", object_id, ROLE_HOST_IP)  # Save admin "merchant" role in Role micro server through Lib method
+                if (status_custumer == "Success" and status_merchant == "Success"):
+                    return Response(json_util.dumps({'response': 'Successful operation'}),
+                                    status=200, mimetype='application/json')
+                else:
+                    return Response(json_util.dumps({'response': 'Error in role association!'}),
+                                    status=404, mimetype='application/json')
+            else:
+                return Response(json_util.dumps({'response': authentication}),
+                         status=404, mimetype='application/json')
+        return Response(json_util.dumps({'response': create_user_status}),
+                        status=404, mimetype='application/json')
+
+    except (errors.DuplicateKeyError, mongoengine.errors.NotUniqueError):
+        return Response(json_util.dumps({'response': 'User already exists'}),
+                        status=400, mimetype='application/json')
     except errors.ServerSelectionTimeoutError:
-        print('Mongodb is not running')
+        return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=404,
+                        mimetype='application/json')
 
 
 @app.route('/user/', methods=['GET'])
@@ -301,7 +334,6 @@ def get_user(**kwargs):
 #find corrent user
 @app.route('/user/my/account', methods=['GET'])
 @Authorization
-@requires_roles('customer', 'merchant')
 @swag_from('API_Definitions/user_get_account.yml')
 def get_current_user(**kwargs):
     user_id = kwargs['payload']

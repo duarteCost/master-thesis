@@ -25,7 +25,6 @@ function getCookie(cname) {
 $(document).ready(function(){
     $.support.cors = true;
 
-    //Register Form Handler
     $('#login-form').submit(function signup(e){
         e.preventDefault();
         $.ajax({
@@ -35,7 +34,7 @@ $(document).ready(function(){
             success: function (data) {
                 console.log('Submission was successful.');
                 console.log(data);
-                setCookie("token", data.response.token, 0.5);
+                setCookie("token", data.token, 0.5);
                 console.log(getCookie("token"));
                 location.replace('index.html');
             },

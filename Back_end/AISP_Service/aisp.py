@@ -315,7 +315,7 @@ def define_avilable_accounts(**kwargs):
         our_bank = bank_account['our_bank']  # define default ask professor
         our_account = bank_account['our_account']  # define default ask professor
         account_details = obp.getAccountById(our_bank, our_account, dl_token)
-        if request.args['amount'] <= account_details['balance']['amount']:
+        if float(request.args.get('amount')) <= float(account_details['balance']['amount']):
             available_banks_accounts.append({'bank_id': account_details['bank_id'], 'account_id': account_details['id'],
                                          'balance' : account_details['balance']})
     print(available_banks_accounts)
