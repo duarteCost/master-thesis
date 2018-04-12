@@ -8,6 +8,11 @@
   "OB": {
     "OB_API_HOST" : "https://psd2-api.openbankproject.com/",
     "API_VERSION" : "v3.0.0"
+  },
+  "DB": {
+    "USERNAME" : "Duarte",
+    "PASSWORD" : "123456",
+    "AUTHSOURCE" : "admin"
   }
 }
 

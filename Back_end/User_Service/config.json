@@ -7,5 +7,10 @@
   "OB": {
     "OB_API_HOST" : "https://psd2-api.openbankproject.com/",
     "CONSUMER_KEY" : "cbzhef0wpc0so2um0c5lfs5hzpdvks45ysothv0t"
+  },
+  "DB": {
+    "USERNAME" : "Duarte",
+    "PASSWORD" : "123456",
+    "AUTHSOURCE" : "admin"
   }
 }

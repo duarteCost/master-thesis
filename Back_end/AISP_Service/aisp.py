@@ -15,12 +15,6 @@ from flasgger import Swagger
 import AISP_Lib.obp
 obp = AISP_Lib.obp
 
-mongodb = MongoClient('localhost', 27017).Aisp_payment_account_db.bank_account
-time.sleep(5)
-
-context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
-
-
 # data from configuration file
 with open('config.json', 'r') as f:
     config = json.load(f)
@@ -30,6 +24,22 @@ USER_HOST_IP = config['DEFAULT']['USER_HOST_IP']
 ROLE_HOST_IP = config['DEFAULT']['ROLE_HOST_IP']
 OB_API_HOST = config['OB']['OB_API_HOST']
 API_VERSION = config['OB']['API_VERSION']
+USERNAME = config['DB']['USERNAME']
+PASSWORD = config['DB']['PASSWORD']
+AUTHSOURCE = config['DB']['AUTHSOURCE']
+
+client = MongoClient('localhost',
+                      username=USERNAME,
+                      password=PASSWORD,
+                      authSource=AUTHSOURCE,
+                      authMechanism='SCRAM-SHA-1')
+
+mongodb = client.Aisp_payment_account_db.bank_account
+print(mongodb)
+time.sleep(5)
+
+context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+
 
 
 # decorator's
@@ -229,7 +239,8 @@ def post_my_default_payment_account(**kwargs):
     try:
         payment_account = mongodb.find_one({'user_id': ObjectId(payload)})
         if payment_account is None:
-            mongoengine.connect(db='Aisp_payment_account_db', host='localhost', port=27017)
+            mongoengine.connect(db='Aisp_payment_account_db', host='localhost', port=27017, username = USERNAME, password = PASSWORD,
+                            authentication_source=AUTHSOURCE, authentication_mechanism='SCRAM-SHA-1')
             Bank_account(ObjectId(), bank_id, account_id, ObjectId(payload)).save()
 
             return Response(json_util.dumps({'response': 'Successful definition your default payment account.'}),
@@ -310,11 +321,13 @@ def define_avilable_accounts(**kwargs):
     banks_accounts = obp.all_accounts(dl_token)
     print(banks_accounts)
     available_banks_accounts = [] # Bank accounts with the amount available
+    print(request.args.get('amount'))
     for bank_account in banks_accounts:
         print(bank_account)
         our_bank = bank_account['our_bank']  # define default ask professor
         our_account = bank_account['our_account']  # define default ask professor
         account_details = obp.getAccountById(our_bank, our_account, dl_token)
+        print(account_details['balance']['amount'])
         if float(request.args.get('amount')) <= float(account_details['balance']['amount']):
             available_banks_accounts.append({'bank_id': account_details['bank_id'], 'account_id': account_details['id'],
                                          'balance' : account_details['balance']})

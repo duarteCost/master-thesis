@@ -21,13 +21,13 @@ produces:
 - application/xml
 parameters:
 - in: path
-#  name: bank_id
-#  description: Id of the paying bank
-#  required: true
-#- in: path
-#  name: account_id
-#  description: Id of the paying account
-#  required: true
+  name: bank_id
+  description: Id of the paying bank
+  required: true
+- in: path
+  name: account_id
+  description: Id of the paying account
+  required: true
 responses:
   200:
     description: Successful operation

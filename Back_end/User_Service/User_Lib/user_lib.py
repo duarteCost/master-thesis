@@ -2,8 +2,13 @@ import mongoengine
 import requests
 from flask import json
 from pymongo import MongoClient, errors
-from mongoengine import errors
 from werkzeug.security import generate_password_hash
+
+with open('config.json', 'r') as f:
+    config = json.load(f)
+USERNAME = config['DB']['USERNAME']
+PASSWORD = config['DB']['PASSWORD']
+AUTHSOURCE = config['DB']['AUTHSOURCE']
 
 #methods
 def authentication_function(user_id, AUTH_HOST_IP):
@@ -26,7 +31,9 @@ def authentication_function(user_id, AUTH_HOST_IP):
 
 def create_user_m(object_id, email, password, name, surname, obp_authorization):
     try:
-        mongoengine.connect(db='User_db', host='localhost', port=27017)
+        print(USERNAME)
+        mongoengine.connect(db='User_db', host='localhost', port=27017, username = USERNAME, password = PASSWORD,
+                            authentication_source=AUTHSOURCE, authentication_mechanism='SCRAM-SHA-1')
         from Back_end.User_Service.User_Models.user_model import User
         User(object_id, email, password, name, surname, None).save()
         return 'Success'

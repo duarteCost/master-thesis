@@ -15,11 +15,6 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from flasgger import Swagger
 
 user_lib = User_Lib.user_lib
-mongobd_user = MongoClient('localhost', 27017).User_db.user
-time.sleep(5)
-
-context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
-
 
 # Variables from config.json
 with open('config.json', 'r') as f:
@@ -29,6 +24,26 @@ ROLE_HOST_IP = config['DEFAULT']['ROLE_HOST_IP']
 USER_HOST_IP = config['DEFAULT']['USER_HOST_IP']
 OB_API_HOST = config['OB']['OB_API_HOST']
 CONSUMER_KEY = config['OB']['CONSUMER_KEY']
+USERNAME = config['DB']['USERNAME']
+PASSWORD = config['DB']['PASSWORD']
+AUTHSOURCE = config['DB']['AUTHSOURCE']
+
+# mongobd = MongoClient('localhost', 27017).User_db
+# mongobd.authenticate('Duarte', '123456')
+
+client = MongoClient('localhost',
+                      username=USERNAME,
+                      password=PASSWORD,
+                      authSource=AUTHSOURCE,
+                      authMechanism='SCRAM-SHA-1')
+mongobd_user = client.User_db.user
+time.sleep(5)
+
+print(mongobd_user)
+context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+
+
+
 
 
 #decorator

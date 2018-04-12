@@ -16,10 +16,6 @@ from flasgger import Swagger
 from flasgger import swag_from
 from werkzeug.security import check_password_hash
 
-role_lib = Role_Lib.role_lib
-mongobd_role = MongoClient('localhost', 27017).Role.role
-time.sleep(5)
-context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
 
 with open('config.json', 'r') as f:
     config = json.load(f)
@@ -27,6 +23,23 @@ with open('config.json', 'r') as f:
 AUTH_HOST_IP = config['DEFAULT']['AUTH_HOST_IP']
 USER_HOST_IP = config['DEFAULT']['USER_HOST_IP']
 ROLE_HOST_IP = config['DEFAULT']['ROLE_HOST_IP']
+USERNAME = config['DB']['USERNAME']
+PASSWORD = config['DB']['PASSWORD']
+AUTHSOURCE = config['DB']['AUTHSOURCE']
+
+role_lib = Role_Lib.role_lib
+
+client = MongoClient('localhost',
+                      username=USERNAME,
+                      password=PASSWORD,
+                      authSource=AUTHSOURCE,
+                      authMechanism='SCRAM-SHA-1')
+
+mongobd_role = client.Role.role
+
+time.sleep(5)
+context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+
 
 
 #decorator
@@ -134,7 +147,8 @@ swagger = Swagger(app, template={
 def verify_db():
     roles = mongobd_role.find({})
     if roles.count() == 0:
-        mongoengine.connect(db='Role', host='localhost', port=27017)
+        mongoengine.connect(db='Role', host='localhost', port=27017, username = USERNAME, password = PASSWORD,
+                            authentication_source=AUTHSOURCE, authentication_mechanism='SCRAM-SHA-1')
         Role(ObjectId(), "merchant", "Merchant role").save()
         Role(ObjectId(), "customer", "Customer role").save()
 
@@ -220,7 +234,8 @@ def create_role(**kwargs):
     description = request_params['description']
 
     try:
-        mongoengine.connect(db='Role', host='localhost', port=27017)
+        mongoengine.connect(db='Role', host='localhost', port=27017, username = USERNAME, password = PASSWORD,
+                            authentication_source=AUTHSOURCE, authentication_mechanism='SCRAM-SHA-1')
         Role(ObjectId(), name, description).save()
         return Response(json_util.dumps({'response': 'Successful operation'}),
                         status=200, mimetype='application/json')

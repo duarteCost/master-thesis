@@ -14,12 +14,6 @@ from PISP_Models.PISP_receiver_account import Bank_account
 import PISP_Lib.obp
 obp = PISP_Lib.obp
 
-mongodb = MongoClient('localhost', 27017).Pisp_receiver_account_db.bank_account
-time.sleep(5)
-
-context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
-
-
 # data from configuration file
 with open('config.json', 'r') as f:
     config = json.load(f)
@@ -29,6 +23,21 @@ USER_HOST_IP = config['DEFAULT']['USER_HOST_IP']
 ROLE_HOST_IP = config['DEFAULT']['ROLE_HOST_IP']
 OB_API_HOST = config['OB']['OB_API_HOST']
 API_VERSION = config['OB']['API_VERSION']
+USERNAME = config['DB']['USERNAME']
+PASSWORD = config['DB']['PASSWORD']
+AUTHSOURCE = config['DB']['AUTHSOURCE']
+
+client = MongoClient('localhost',
+                      username=USERNAME,
+                      password=PASSWORD,
+                      authSource=AUTHSOURCE,
+                      authMechanism='SCRAM-SHA-1')
+
+mongodb = client.Pisp_receiver_account_db.bank_account
+time.sleep(5)
+
+context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+
 
 
 # decorator's
@@ -354,7 +363,8 @@ def post_receiver_account(**kwargs):
         payment_account = mongodb.find_one({})
         print(payment_account)
         if payment_account is None:
-            mongoengine.connect(db='Pisp_receiver_account_db', host='localhost', port=27017)
+            mongoengine.connect(db='Pisp_receiver_account_db', host='localhost', port=27017, username = USERNAME, password = PASSWORD,
+                            authentication_source=AUTHSOURCE, authentication_mechanism='SCRAM-SHA-1')
             Bank_account(ObjectId(), bank_id, account_id).save()
 
             return Response(json_util.dumps({'response': 'Successful definition your receiver bank account.'}),
