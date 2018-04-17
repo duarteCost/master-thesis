@@ -268,6 +268,13 @@ def payment_initialization(bank_id, account_id,**kwargs):
         return Response(json_util.dumps({'response': 'Missing parameter: amount'}), status=400,
                         mimetype='application/json')
 
+
+    if 'description' not in request_params:
+        description = "Default description!"
+    else:
+        description = request_params['description']
+
+
     # merchant bank details
     receiver_account_response = get_receiver_account_method()
     if "account_data" not in receiver_account_response:
@@ -291,7 +298,7 @@ def payment_initialization(bank_id, account_id,**kwargs):
     challenge_types = obp.getChallengeTypes(bank_id, account_id, dl_token) #use default sandbox_tan
     challenge_type = challenge_types[0]['type']#only exists the first
 
-    initiate_response = obp.initiateTransactionRequest(bank_id, account_id, challenge_type, cp_bank, cp_account,dl_token) #See Lib
+    initiate_response = obp.initiateTransactionRequest(bank_id, account_id, challenge_type, cp_bank, cp_account,dl_token, description) #See Lib
     print(initiate_response)
     if "error" in initiate_response:
         return Response(json_util.dumps({'response': 'Got an error: ' + str(initiate_response)}), status=400,

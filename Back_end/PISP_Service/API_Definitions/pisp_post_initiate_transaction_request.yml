@@ -40,6 +40,10 @@ parameters:
   name: amount
   description: Amount
   required: true
+- in: formData
+  name: description
+  description: Description
+  required: true
 responses:
   200:
     description: Successful operation

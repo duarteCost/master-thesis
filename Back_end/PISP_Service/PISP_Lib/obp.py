@@ -76,10 +76,10 @@ def getTransactionRequest(bank, account, DL_TOKEN):
     response = requests.get(u"{0}/obp/{1}/banks/{2}/accounts/{3}/owner/transactions".format(BASE_URL, API_VERSION, bank, account), headers={'Authorization' : DL_TOKEN , 'content-type'  : 'application/json'})
     return response.json()
 
-def initiateTransactionRequest(bank, account, challenge_type, cp_bank, cp_account, DL_TOKEN):
+def initiateTransactionRequest(bank, account, challenge_type, cp_bank, cp_account, DL_TOKEN, description):
     send_to = {"bank": cp_bank, "account": cp_account}
     payload = '{"to": {"account_id": "' + send_to['account'] +'", "bank_id": "' + send_to['bank'] + \
-    '"}, "value": {"currency": "' + OUR_CURRENCY + '", "amount": "' + OUR_VALUE + '"}, "description": "Description abc", "challenge_type" : "' + \
+    '"}, "value": {"currency": "' + OUR_CURRENCY + '", "amount": "' + OUR_VALUE + '"}, "description": "'+description+'", "challenge_type" : "' + \
     challenge_type + '"}'
     response = requests.post(u"{0}/obp/v1.4.0/banks/{1}/accounts/{2}/owner/transaction-request-types/{3}/transaction-requests".format(BASE_URL, bank, account, challenge_type), data=payload, headers={'Authorization' : DL_TOKEN , 'content-type'  : 'application/json'})
     return response.json()
