@@ -1,6 +1,7 @@
 import requests
 
-from flask import json
+from bson import json_util
+from flask import Response, json
 
 def setPaymentDetails(currency ,value):
     global OUR_CURRENCY, OUR_VALUE
@@ -81,5 +82,22 @@ def initiateTransactionRequest(bank, account, challenge_type, cp_bank, cp_accoun
     payload = '{"to": {"account_id": "' + send_to['account'] +'", "bank_id": "' + send_to['bank'] + \
     '"}, "value": {"currency": "' + OUR_CURRENCY + '", "amount": "' + OUR_VALUE + '"}, "description": "'+description+'", "challenge_type" : "' + \
     challenge_type + '"}'
-    response = requests.post(u"{0}/obp/v1.4.0/banks/{1}/accounts/{2}/owner/transaction-request-types/{3}/transaction-requests".format(BASE_URL, bank, account, challenge_type), data=payload, headers={'Authorization' : DL_TOKEN , 'content-type'  : 'application/json'})
+    try:
+        response = requests.post(
+            u"{0}/obp/v1.4.0/banks/{1}/accounts/{2}/owner/transaction-request-types/{3}/transaction-requests".format(
+                BASE_URL, bank, account, challenge_type),
+            data=payload, headers={'Authorization': DL_TOKEN, 'content-type': 'application/json'})
+    except requests.exceptions.Timeout:
+        # Maybe set up for a retry, or continue in a retry loop
+        return Response(json_util.dumps({'response': 'Server timeout.'}), status=404,
+                        mimetype='application/json')
+    except requests.exceptions.TooManyRedirects:
+        # Tell the user their URL was bad and try a different one
+        return Response(json_util.dumps({'response': 'Impossible to find url.'}), status=404,
+                        mimetype='application/json')
+    except requests.exceptions.RequestException as err:
+        # catastrophic error. bail.
+        return Response(json_util.dumps({'response': str(err)}), status=404,
+                        mimetype='application/json')
+
     return response.json()

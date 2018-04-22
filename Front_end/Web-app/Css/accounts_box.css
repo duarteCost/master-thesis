@@ -1,0 +1,72 @@
+.accounts-modal-overlay {
+    position: fixed; /* Stay in place */ !important;
+    z-index: 1; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgba(230,230,230,0.8); /* Black w/ opacity */
+    padding-top: 20px;
+    border-radius: 5px;
+}
+
+/* Modal Content/Box */
+.accounts-modal-overlay .accounts-modal {
+    background-color:rgb(255,255,255);
+    width: 38%; /* Could be more or less, depending on screen size */
+    margin: 130px auto 0;
+    box-shadow: 0 0 20px rgba(0,0,0,.2);
+    border-radius: 3px;
+    overflow: hidden
+}
+
+.accounts-modal-overlay .accounts-modal header {
+    padding: 20px 8px;
+    border-color:black;
+    background-color: #2B2F32;
+    color: rgb(246,255,255);
+    border-bottom: 1px solid #e5e5e5
+}
+
+.accounts-modal-overlay .accounts-modal header h3 {
+    all: initial;
+    all: unset;
+    font-size: 16px;
+    margin: 0;
+    display: inline-block;
+}
+
+.accounts-modal-overlay .accounts-modal .message{
+    padding: 12px 10px;
+}
+
+.accounts-modal-overlay .accounts-modal .message p{
+    margin: 0;
+    font-size: 15px;
+    color: rgb(246,255,255);
+}
+
+.accounts-modal-overlay .accounts-modal footer {
+    border-top: 1px solid #e5e5e5;
+    padding: 8px 10px
+}
+
+.accounts-modal-overlay .accounts-modal footer .controls {
+    direction: rtl
+}
+
+.accounts-modal-overlay .accounts-modal footer .controls .button {
+    padding: 5px 15px;
+    border-radius: 3px
+}
+
+.button {
+    cursor: pointer
+}
+
+.button-danger {
+    background-color: #f44336;
+    border: 1px solid #d32f2f;
+    color: #f5f5f5
+}

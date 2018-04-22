@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<!--
+Template Name: Hoppler
+Author: <a href="http://www.os-templates.com/">OS Templates</a>
+Author URI: http://www.os-templates.com/
+Licence: Free to use under our free template licence terms
+Licence URI: http://www.os-templates.com/template-terms
+-->
+<html lang="" xmlns="http://www.w3.org/1999/html">
+<!-- To declare your language - read more here: https://www.w3.org/International/questions/qa-html-language-declarations -->
+<head>
+    <title>Nearsoft - Associate Open Bank</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="../JavaScrip/common.js"></script>
+    <script src="../JavaScrip/aisp.js"></script>
+    <link href="..\Css\layout.css" rel="stylesheet" type="text/css" media="all">
+    <link href="..\Css\style.css" rel="stylesheet" type="text/css" media="all">
+    <!----------------bootstrap------------------------->
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+    <!----------------end of bootstrap -------------------->
+
+</head>
+<body id="top">
+    <div class="bgded overlay">
+        <div class="wrapper row1" style="background-color:#333; ">
+            <header id="header" class="hoc clear ">
+                <div id="logo" class="fl_left" style="width: 10%; margin: 1% 0 1% 0; ">
+                    <h1><a href="index.html"><img src="../Images/logo.png"></a></h1>
+                </div>
+                <nav id="mainav" class="fl_right">
+                    <ul class="clear">
+                        <li><a href="index.html">Home</a></li>
+                        <li class="active"><a class="open-bank" href="open-bank-association.html">PSD2</a></li>
+                        <li><a href="developer.html">Developer</a></li>
+                        <li><a  id = "login-state"></a></li>
+                    </ul>
+                </nav>
+            </header>
+        </div>
+    </div>
+    <div class="content">
+        <div id="show-default-payment-account">
+        </div>
+    </div>
+    <div id = "accounts_modal_id" style="display: none" class="accounts-modal-overlay modal">
+        <div class="accounts-modal">
+            <header>
+                <button type="button" class="close close_accounts_box">&times;</button>
+                <h3 id="modalTitle" class="modal-title">Choose a new default payment account!</h3>
+            </header>
+                <!-- Modal body -->
+            <div id = "modalBody" class="message">
+
+                <div id="bank_accounts">
+
+                </div>
+
+            </div>
+            <footer>
+                <!--Modal footer-->
+                <div class="controls">
+                    <button type="button" class="btn open-bank close_accounts_box">Close</button>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<!--
+Template Name: Hoppler
+Author: <a href="http://www.os-templates.com/">OS Templates</a>
+Author URI: http://www.os-templates.com/
+Licence: Free to use under our free template licence terms
+Licence URI: http://www.os-templates.com/template-terms
+-->
+<html lang="">
+<!-- To declare your language - read more here: https://www.w3.org/International/questions/qa-html-language-declarations -->
+  <head>
+    <title>Nearsoft - Associate Open Bank</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link href="..\Css\layout.css" rel="stylesheet" type="text/css" media="all">
+    <link href="..\Css\style.css" rel="stylesheet" type="text/css" media="all">
+    <link href="..\Css\alert_box.css" rel="stylesheet" type="text/css" media="all">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="../JavaScrip/common.js"></script>
+    <script src="../JavaScrip/open-bank-association.js"></script>
+    <!----------------bootstrap------------------------->
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+    <!----------------end of bootstrap -------------------->
+
+
+  </head>
+  <body id="top">
+    <div class="bgded overlay">
+      <div class="wrapper row1" style="background-color:#333; ">
+        <header id="header" class="hoc clear ">
+          <div id="logo" class="fl_left" style="width: 10%; margin: 1% 0 1% 0; ">
+            <h1><a href="index.html"><img src="../Images/logo.png"></a></h1>
+          </div>
+          <nav id="mainav" class="fl_right">
+            <ul class="clear">
+              <li><a href="index.html">Home</a></li>
+              <li class="active"><a class="open-bank" href="open-bank-association.html">PSD2</a></li>
+              <li><a href="developer.html">Developer</a></li>
+              <li><a  id = "login-state"></a></li>
+            </ul>
+          </nav>
+        </header>
+      </div>
+    </div>
+    <div id="show-open-bank-user">
+
+    </div>
+    <div id = "associate_ob_account" style="display: none ">
+      <div class="form-content-ob">
+        <div class="form-header-ob register-form-header-ob">
+          <h2>Nearsoft Payment Provider</h2>
+          <h3>Associate your Open Bank Account</h3>
+        </div>
+        <div class="form-body">
+          <form id="open-bank-register-form" role="form" method="POST">
+            <div class="form-group">
+              <label><span class="glyphicon glyphicon-user span-customized-ob"></span> Open Bank Username</label>
+              <input type="textbox" class="form-control form-element" name="username" placeholder="Open Bank username" required>
+            </div>
+            <div class="form-group password">
+              <label><span class="glyphicon glyphicon-eye-open span-customized-ob"></span> Open Bank Password</label>
+              <input  type="password" class="form-control password-validation form-element" name="password" placeholder="Open Bank Password" data-validation="false" minlength="6" required>
+            </div>
+            <div class="form-group confirm-password">
+              <label><span class="glyphicon glyphicon-eye-open span-customized-ob"></span> Confirm Open Bank Password</label>
+              <input  type="password" class="form-control password-confirmation form-element" name="confirm-password" placeholder="Confirm Open Bank Password" data-validation="false" required>
+            </div>
+            <p class="submit-error" id="open_bank_error_message"></p>
+            <br>
+            <button type="submit" class="btn btn-block submit-btn-ob"><span class="glyphicon glyphicon-pencil"></span>&nbsp;Associate </button>
+            <!--<input type="submit" class="submit-btn btn btn-primary btn-danger form-element" value="Signup"> -->
+          </form>
+        </div>
+      </div>
+    </div><!-- end of associate open bank account-->
+
+
+  </body>
+</html>
