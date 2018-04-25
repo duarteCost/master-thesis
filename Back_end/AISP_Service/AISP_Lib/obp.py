@@ -1,6 +1,7 @@
 import requests
+from bson import json_util
+from flask import json, Response
 
-from flask import json
 
 def setPaymentDetails(currency ,value):
     global OUR_CURRENCY, OUR_VALUE
@@ -42,7 +43,22 @@ def getAccountById(bank, account,  DL_TOKEN):
 
 def all_accounts(DL_TOKEN):
     # Prepare headers
-    response = requests.get(u"{0}/obp/{1}/my/accounts".format(BASE_URL, API_VERSION), headers={'Authorization' : DL_TOKEN , 'content-type'  : 'application/json'}).content
+    try:
+        response = requests.get(u"{0}/obp/{1}/my/accounts".format(BASE_URL, API_VERSION),
+                                headers={'Authorization': DL_TOKEN, 'content-type': 'application/json'}).content
+    except requests.exceptions.Timeout:
+        # Maybe set up for a retry, or continue in a retry loop
+        return Response(json_util.dumps({'response': 'Server timeout.'}), status=404,
+                        mimetype='application/json')
+    except requests.exceptions.TooManyRedirects:
+        # Tell the user their URL was bad and try a different one
+        return Response(json_util.dumps({'response': 'Impossible to find url.'}), status=404,
+                        mimetype='application/json')
+    except requests.exceptions.RequestException as err:
+        # catastrophic error. bail.
+        return Response(json_util.dumps({'response': str(err)}), status=404,
+                        mimetype='application/json')
+
     accounts = json.loads(response.decode("utf-8"))
     #print(accounts[0])
     res = []
@@ -83,3 +99,15 @@ def initiateTransactionRequest(bank, account, challenge_type, cp_bank, cp_accoun
     challenge_type + '"}'
     response = requests.post(u"{0}/obp/v1.4.0/banks/{1}/accounts/{2}/owner/transaction-request-types/{3}/transaction-requests".format(BASE_URL, bank, account, challenge_type), data=payload, headers={'Authorization' : DL_TOKEN , 'content-type'  : 'application/json'})
     return response.json()
+
+
+# Get owner's transactions
+    # Possible custom headers for pagination:
+    # sort_direction=ASC/DESC ==> default value: DESC. The sort field is the completed date.
+    # limit=NUMBER ==> default value: 50
+    # offset=NUMBER ==> default value: 0
+    # from_date=DATE => default value: Thu Jan 01 01:00:00 CET 1970 (format below)
+    # to_date=DATE => default value: 3049-01-01
+def getTransactions(bank, account, DL_TOKEN):
+    response = requests.get(u"{0}/obp/{1}/banks/{2}/accounts/{3}/owner/transactions".format(BASE_URL, API_VERSION, bank, account), headers={'Authorization' : DL_TOKEN , 'content-type'  : 'application/json'})
+    return response.json()['transactions']

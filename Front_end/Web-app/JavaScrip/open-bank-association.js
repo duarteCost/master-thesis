@@ -33,7 +33,7 @@ $(document).ready(function () {
                     }
                 }
                 else {
-                    alert("Our server is unavailable. Try access later!");
+                    //alert("Our server is unavailable. Try access later!");
                     location.replace('index.html')
                 }
             }

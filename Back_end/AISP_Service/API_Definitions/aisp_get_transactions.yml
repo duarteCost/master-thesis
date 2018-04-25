@@ -1,0 +1,125 @@
+Get account transactions
+This route uses the PSD2 and allows to obtain the account transaction record.
+There are 2 parameters related to the payer, which are the bank_id corresponding to the bank id and account_id
+ that corresponds to the account id.
+
+**Authorization is mandatory**
+
+**To get athorization:**
+  1 - [Login](https://localhost:5001/apidocs/#!/user/login)
+  2 - Copy token from response
+  3 - Click on authorize on this page
+  4 - Paste the token into the text input
+---
+tags:
+- AISP
+security:
+  - JWT: []
+operationId: transactions
+produces:
+- application/json
+- application/xml
+parameters:
+- in: path
+  name: bank_id
+  description: Id of the paying bank
+  required: true
+- in: path
+  name: account_id
+  description: Id of the paying account
+  required: true
+responses:
+  200:
+    description: Successful operation
+    schema:
+      $ref: '#/definitions/success_transaction'
+  400:
+    description: Missing or invalid credentials
+    schema:
+      $ref: '#/definitions/error40X'
+  404:
+    description: Bad request
+    schema:
+      $ref: '#/definitions/error40X'
+
+definitions:
+
+  success_transaction:
+    properties:
+      response:
+        type: array
+        $ref: '#/definitions/transactions'
+
+  transactions:
+    properties:
+      transactions:
+        type: array
+        $ref: '#/definitions/transaction_data'
+
+  transaction_data:
+     properties:
+      id:
+        type: string
+      this_account:
+        type: array
+        $ref: '#/definitions/accounts'
+      other_account:
+        type: array
+        $ref: '#/definitions/accounts'
+      details:
+        type: array
+        $ref: '#/definitions/transaction_details'
+
+
+  accounts:
+    properties:
+      id:
+        type: string
+      bank_routing:
+        type: string
+      account_routing:
+        type: string
+      holders:
+        type: string
+
+  transaction_details:
+    properties:
+      type:
+        type: string
+      description:
+        type: string
+      posted:
+        type: string
+      completed:
+        type: string
+      new_balance:
+        type: array
+        $ref: '#/definitions/new_balance'
+      value:
+        type: array
+        $ref: '#/definitions/value'
+
+  new_balance:
+     properties:
+      currency:
+        type: string
+      amount:
+        type: string
+
+  value:
+     properties:
+      currency:
+        type: string
+      amount:
+        type: string
+
+
+
+
+
+
+
+  error40X:
+    properties:
+      response:
+        type: string

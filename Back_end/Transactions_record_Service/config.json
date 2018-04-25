@@ -2,13 +2,7 @@
   "DEFAULT": {
     "AUTH_HOST_IP": "localhost",
     "USER_HOST_IP": "localhost",
-    "ROLE_HOST_IP": "localhost",
-    "TRANSACTION_RECORD_HOST_IP": "localhost"
-  },
-
-  "OB": {
-    "OB_API_HOST" : "https://psd2-api.openbankproject.com/",
-    "API_VERSION" : "v3.0.0"
+    "ROLE_HOST_IP": "localhost"
   },
   "DB": {
     "USERNAME" : "Duarte",

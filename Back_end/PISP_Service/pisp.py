@@ -21,6 +21,7 @@ with open('config.json', 'r') as f:
 AUTH_HOST_IP = config['DEFAULT']['AUTH_HOST_IP']
 USER_HOST_IP = config['DEFAULT']['USER_HOST_IP']
 ROLE_HOST_IP = config['DEFAULT']['ROLE_HOST_IP']
+TRANSACTION_RECORD_HOST_IP = config['DEFAULT']['TRANSACTION_RECORD_HOST_IP']
 OB_API_HOST = config['OB']['OB_API_HOST']
 API_VERSION = config['OB']['API_VERSION']
 USERNAME = config['DB']['USERNAME']
@@ -63,7 +64,6 @@ def Authorization(f):
             # catastrophic error. bail.
             return Response(json_util.dumps({'response': str(err)}), status=404,
                             mimetype='application/json')
-            sys.exit(1)
 
         response = response_bytes.decode("utf-8")
         error_message = 'Invalid token.'
@@ -189,7 +189,29 @@ def get_receiver_account_method():
         return 'Mongodb is not running'
 
 
-
+def save_transaction_record(bank_id, account_id, OUR_VALUE, OUR_CURRENCY, description, status, token):
+    # save transaction record on Transaction record micro service
+    try:
+        transaction_data = {'amount': OUR_VALUE, 'currency': OUR_CURRENCY, 'description': description,
+                            'status': status};
+        requests.post(
+            'https://' + TRANSACTION_RECORD_HOST_IP + ':5004/transactions_record/bank/' + bank_id + '/account/' + account_id + '/transactions',
+            headers={'Authorization': token}, data=transaction_data,
+            verify=False)  # Verifies in Auth_Service if the token is valid and returns the payload(user_id)
+    except requests.exceptions.Timeout:
+        # Maybe set up for a retry, or continue in a retry loop
+        return Response(json_util.dumps({'response': 'Transactions record microservice timeout.'}), status=404,
+                        mimetype='application/json')
+    except requests.exceptions.TooManyRedirects:
+        # Tell the user their URL was bad and try a different one
+        return Response(json_util.dumps({'response': 'Impossible to find url of transactions record microservice.'}),
+                        status=404,
+                        mimetype='application/json')
+    except requests.exceptions.RequestException as err:
+        # catastrophic error. bail.
+        return Response(json_util.dumps({'response': str(err)}), status=404,
+                        mimetype='application/json')
+        # end of save transaction record
 
 app = Flask(__name__)
 CORS(app)
@@ -240,7 +262,6 @@ def welcome_ob():
 @swag_from('API_Definitions/pisp_get_charge.yml')
 def get_charge(bank_id, account_id,**kwargs):
     dl_token = kwargs['user_ob_token'] # Get the user authorization given by the open bank
-    print("here")
     set_baseurl_apiversion() #Fill the API url and version with config file data
     challenge_types = obp.getChallengeTypes(bank_id, account_id, dl_token) #See Lib
     charge = challenge_types[0]['charge']
@@ -258,6 +279,7 @@ def get_charge(bank_id, account_id,**kwargs):
 @requires_roles('customer', 'merchant')
 @swag_from('API_Definitions/pisp_post_initiate_transaction_request.yml')
 def payment_initialization(bank_id, account_id,**kwargs):
+    token = kwargs['token']
     set_baseurl_apiversion()
     request_params = request.form
     print(request_params)
@@ -298,25 +320,25 @@ def payment_initialization(bank_id, account_id,**kwargs):
     challenge_types = obp.getChallengeTypes(bank_id, account_id, dl_token) #use default sandbox_tan
     challenge_type = challenge_types[0]['type']#only exists the first
 
-    initiate_response = obp.initiateTransactionRequest(bank_id, account_id, challenge_type, cp_bank, cp_account,dl_token, description) #See Lib
-    print(initiate_response)
-    if "error" in initiate_response:
-        return Response(json_util.dumps({'response': 'Got an error: ' + str(initiate_response)}), status=400,
+    initiate_transaction_response = obp.initiateTransactionRequest(bank_id, account_id, challenge_type, cp_bank, cp_account,dl_token, description) #See Lib
+    print(initiate_transaction_response)
+    if "error" in initiate_transaction_response:
+        return Response(json_util.dumps({'response': 'Got an error: ' + str(initiate_transaction_response)}), status=400,
                         mimetype='application/json')
-
-    return Response(json_util.dumps({'response': initiate_response}), status=200,
+    else:
+        save_transaction_record(bank_id, account_id, OUR_VALUE, OUR_CURRENCY, description, initiate_transaction_response['status'], token)
+        return Response(json_util.dumps({'response': initiate_transaction_response}), status=200,
                     mimetype='application/json')
 
 
-
-
-#In case the transaction is not completed (if the amount is greater than x) it is necessary to respond to a challange
+# In case the transaction is not completed (if the amount is greater than x) it is necessary to respond to a challenge
 @app.route('/pisp/bank/<bank_id>/account/<account_id>/answer-challenge', methods=['POST'])
 @Authorization
 @OB_Authorization
 @requires_roles('customer', 'merchant')
 @swag_from('API_Definitions/pisp_post_answer_challenge.yml')
 def payment_answer_challenge(bank_id, account_id,**kwargs):
+    token = kwargs['token']
     set_baseurl_apiversion()
     request_params = request.form
     print(request_params) #body of route
@@ -339,15 +361,19 @@ def payment_answer_challenge(bank_id, account_id,**kwargs):
         return Response(json_util.dumps({'response': 'Got an error: ' + str(challenge_response)}), status=400,
                         mimetype='application/json')
 
-
+    OUR_VALUE = challenge_response['details']['value']['amount']
+    OUR_CURRENCY = challenge_response['details']['value']['currency']
+    description = challenge_response['details']['description']
+    status = challenge_response['status']
     print("Transaction status: {0}".format(challenge_response))
+    save_transaction_record(bank_id, account_id, OUR_VALUE, OUR_CURRENCY, description,
+                            status, token)
     return Response(json_util.dumps({'response': challenge_response}), status=200,
                     mimetype='application/json')
-
 # end of payment routs
 
-# Payment receiver account
 
+# Payment receiver account
 @app.route('/pisp/receiver/bank/account', methods=['POST'])
 @Authorization
 @requires_roles('merchant')
@@ -387,7 +413,6 @@ def post_receiver_account(**kwargs):
     except errors.ServerSelectionTimeoutError:
         return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=404,
                         mimetype='application/json')
-
 
 
 @app.route('/pisp/receiver/bank/account', methods=['GET'])

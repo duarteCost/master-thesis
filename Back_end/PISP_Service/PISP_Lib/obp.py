@@ -38,7 +38,7 @@ def getPrivateAccounts(bank, DL_TOKEN):
 # Get Account by Id
 def getAccountById(bank, account,  DL_TOKEN):
     # Prepare headers
-    response = requests.get(u"{0}/obp/{1}//my/banks/{2}/accounts/{3}/account".format(BASE_URL, API_VERSION, bank, account), headers={'Authorization' : DL_TOKEN , 'content-type'  : 'application/json'})
+    response = requests.get(u"{0}/obp/{1}l/my/banks/{2}/accounts/{3}/account".format(BASE_URL, API_VERSION, bank, account), headers={'Authorization' : DL_TOKEN , 'content-type'  : 'application/json'})
     return response.json()
 
 def all_accounts(DL_TOKEN):

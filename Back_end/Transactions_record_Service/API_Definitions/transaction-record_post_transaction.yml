@@ -1,7 +1,7 @@
-Update default payment account
-With this route you can update the default account that transactions will be made.
-There are  2  parameters related to the payer, which are the bank_id corresponding to the bank id and account_id
-that corresponds to the account id.
+Post transaction record
+With this route you can record the transaction after it is completed.
+There are  5  parameters related to the transaction, which are the bank_id corresponding to the bank id, account_id
+that corresponds to the account id, amount, currency and description that corresponds to the transaction description.
 
 **Authorization is mandatory**
 
@@ -12,32 +12,43 @@ that corresponds to the account id.
   4 - Paste the token into the text input
 ---
 tags:
-- AISP
+- Transactions_record
 security:
   - JWT: []
-summary: get default payment account
-operationId: post_payment_account
+operationId: post_transaction
 produces:
 - application/json
 - application/xml
 parameters:
 - in: path
-  name: id
-  description: Object id
-  required: true
-- in: formData
   name: bank_id
   description: Id of the paying bank
   required: true
-- in: formData
+- in: path
   name: account_id
   description: Id of the paying account
+  required: true
+- in: formData
+  name: amount
+  description: Transaction amount
+  required: true
+- in: formData
+  name: currency
+  description: Transaction currency
+  required: true
+- in: formData
+  name: description
+  description: Transaction description
+  required: true
+- in: formData
+  name: status
+  description: Transaction description
   required: true
 responses:
   200:
     description: Successful operation
     schema:
-      $ref: '#/definitions/success_update_payment_bank_account_default'
+      $ref: '#/definitions/success_post_transaction'
   400:
     description: Missing or invalid credentials
     schema:
@@ -48,7 +59,7 @@ responses:
       $ref: '#/definitions/error40X'
 
 definitions:
-  success_update_payment_bank_account_default:
+  success_post_transaction:
     properties:
       response:
         type: string

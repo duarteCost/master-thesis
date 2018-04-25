@@ -1,0 +1,98 @@
+Get account transactions
+This route uses the PSD2 and allows to obtain the account transaction record.
+There are 2 parameters related to the payer, which are the bank_id corresponding to the bank id and account_id
+ that corresponds to the account id.
+
+**Authorization is mandatory**
+
+**To get athorization:**
+  1 - [Login](https://localhost:5001/apidocs/#!/user/login)
+  2 - Copy token from response
+  3 - Click on authorize on this page
+  4 - Paste the token into the text input
+---
+tags:
+- Transactions_record
+security:
+  - JWT: []
+operationId: transactions
+produces:
+- application/json
+- application/xml
+parameters:
+- in: path
+  name: bank_id
+  description: Id of the paying bank
+  required: true
+- in: path
+  name: account_id
+  description: Id of the paying account
+  required: true
+responses:
+  200:
+    description: Successful operation
+    schema:
+      $ref: '#/definitions/success_transaction'
+  400:
+    description: Missing or invalid credentials
+    schema:
+      $ref: '#/definitions/error40X'
+  404:
+    description: Bad request
+    schema:
+      $ref: '#/definitions/error40X'
+
+definitions:
+
+  success_transaction:
+    properties:
+      response:
+        type: array
+        $ref: '#/definitions/transactions'
+
+  transactions:
+    properties:
+      id:
+        type: array
+        $ref: '#/definitions/transaction_id'
+      bank_id:
+        type: string
+      account_id:
+        type: string
+      amount:
+        type: string
+      currency:
+        type: string
+      description:
+        type: string
+      status:
+        type: string
+      user_id:
+        type: array
+        $ref: '#/definitions/transaction_user_id'
+      modificated_at:
+        type: array
+        $ref: '#/definitions/transaction_modified_at'
+
+  transaction_id:
+    properties:
+      $oid:
+        type: string
+
+  transaction_user_id:
+    properties:
+      $oid:
+        type: string
+
+
+  transaction_modified_at:
+    properties:
+      date:
+        type: string
+
+
+
+  error40X:
+    properties:
+      response:
+        type: string

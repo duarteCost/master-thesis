@@ -34,8 +34,9 @@ client = MongoClient('localhost',
                       authSource=AUTHSOURCE,
                       authMechanism='SCRAM-SHA-1')
 
-mongodb = client.Aisp_payment_account_db.bank_account
-print(mongodb)
+mongodb_bank_account = client.Aisp_db.bank_account
+mongodb_transactions = client.Aisp_db.transactions
+print(mongodb_bank_account)
 time.sleep(5)
 
 context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
@@ -227,26 +228,26 @@ def post_my_default_payment_account(**kwargs):
     request_params = request.form
     print(request_params)
     if 'bank_id' not in request_params:
-        return Response(json_util.dumps({'response': 'Missing parameter: username'}), status=400,
+        return Response(json_util.dumps({'response': 'Missing parameter: bank_id'}), status=400,
                         mimetype='application/json')
     elif 'account_id' not in request_params:
-        return Response(json_util.dumps({'response': 'Missing parameter: password'}), status=400,
+        return Response(json_util.dumps({'response': 'Missing parameter: account_id'}), status=400,
                         mimetype='application/json')
 
     bank_id = request_params['bank_id']
     account_id = request_params['account_id']
 
     try:
-        payment_account = mongodb.find_one({'user_id': ObjectId(payload)})
+        payment_account = mongodb_bank_account.find_one({'user_id': ObjectId(payload)})
         if payment_account is None:
-            mongoengine.connect(db='Aisp_payment_account_db', host='localhost', port=27017, username = USERNAME, password = PASSWORD,
+            mongoengine.connect(db='Aisp_db', host='localhost', port=27017, username = USERNAME, password = PASSWORD,
                             authentication_source=AUTHSOURCE, authentication_mechanism='SCRAM-SHA-1')
             Bank_account(ObjectId(), bank_id, account_id, ObjectId(payload)).save()
 
             return Response(json_util.dumps({'response': 'Successful definition your default payment account.'}),
                             status=200, mimetype='application/json')
         else:
-            mongodb.find_one_and_update({'user_id': ObjectId(payload)},
+            mongodb_bank_account.find_one_and_update({'user_id': ObjectId(payload)},
                                                  {'$set': {'bank_id': bank_id, 'account_id' : account_id}})
             return Response(json_util.dumps({'response': 'Successful update of your default payment account.'}),
                             status=200, mimetype='application/json')
@@ -267,7 +268,7 @@ def post_my_default_payment_account(**kwargs):
 def get_my_default_payment_account(**kwargs):
     user_id = kwargs['payload']
     try:
-        payment_account = mongodb.find_one({'user_id': ObjectId(user_id)})
+        payment_account = mongodb_bank_account.find_one({'user_id': ObjectId(user_id)})
         if payment_account is None:
             return Response(json_util.dumps({'response': 'No default payment account has been found'}),
                             status=400, mimetype='application/json')
@@ -319,9 +320,7 @@ def define_avilable_accounts(**kwargs):
 
     dl_token = kwargs['user_ob_token']  # Get the user authorization given by the open bank
     banks_accounts = obp.all_accounts(dl_token)
-    print(banks_accounts)
     available_banks_accounts = [] # Bank accounts with the amount available
-    print(request.args.get('amount'))
     for bank_account in banks_accounts:
         print(bank_account)
         our_bank = bank_account['our_bank']  # define default ask professor
@@ -333,6 +332,23 @@ def define_avilable_accounts(**kwargs):
                                          'balance' : account_details['balance']})
     print(available_banks_accounts)
     return Response(json_util.dumps({'response': available_banks_accounts }), status=200,
+                    mimetype='application/json')
+
+
+
+
+
+# This route return all transactions record
+@app.route('/aisp/bank/<bank_id>/account/<account_id>/transactions', methods=['GET'])
+@Authorization
+@OB_Authorization
+@requires_roles('customer', 'merchant')
+@swag_from('API_Definitions/aisp_get_transactions.yml')
+def get_transactions(bank_id, account_id, **kwargs):
+    set_baseurl_apiversion()
+    dl_token = kwargs['user_ob_token']  # Get the user authorization given by the open bank
+    transactions = obp.getTransactions(bank_id, account_id, dl_token)  # See Lib
+    return Response(json_util.dumps({'response': transactions}), status=200,
                     mimetype='application/json')
 
 

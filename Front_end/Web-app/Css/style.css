@@ -2,17 +2,11 @@
     text-align: center;
     align-items: center;
     alignment: center;
-
 }
 
 
 
-/*index*/
-#pageintro{
-}
-
-/*end of index*/
-/*ob*/
+/*open bank association */
 #associate_ob_account{
     height: auto;
     width: 50%;
@@ -60,13 +54,9 @@
     border: 1px solid #333;
 }
 
+/**end open bank association/
 
-
-
-
-/**end ob/
-
-/*Modal of choose another default payment account*/
+/*Modal to choose another default payment account*/
 #bank_accounts{
     margin-top: 10%;
     text-align: center;
@@ -93,42 +83,6 @@
 }
 /*End of modal*/
 
-/*register and login*/
-.invalid-field{
-    border: 2px solid #B6334C;
-}
-
-.span-customized{
-    color: rgb(246,255,255);
-}
-
-
-
-.form-content{
-    color: rgb(246,255,255);
-    margin-top: 10%;
-    background-color:rgb(115,115,115);
-}
-
-.form-header{
-    width:100%;
-    padding: 2% 2% 2% 2%;
-    border-color:black;
-    background-color: #2B2F32;
-}
-.form-header-right{
-    float:right;
-    width: 30%;
-}
-.form-header-left{
-    width : 70%;
-    float:left;
-}
-
-
-.form-body{
-    padding: 4% 4% 4% 4%;
-}
 
 .btn{
     background-color:#333;
@@ -152,5 +106,4 @@ a:hover{
     color: rgb(222,69,30);
     font-weight: bold;
 }
-/*end of login and register pages*/
 

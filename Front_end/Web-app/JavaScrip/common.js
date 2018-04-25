@@ -1,3 +1,41 @@
+function Alert(title, msg) { /*change*/
+    var deferred = new $.Deferred(function () {
+        var $content =  "<div class='alert-modal-overlay'>" +
+            "<div class='alert-modal'><header>" +
+            " <h3> " + title + " </h3> " +
+            "</header>" +
+            "<div class='message'>" +
+            " <p> " + msg + " </p> " +
+            "</div>" +
+            // "<footer>" +
+            // "<div class='controls'>" +
+            // " <button class='button button-danger doAction'>Ok</button> " +
+            // "</div>" +
+            // "</footer>" +
+            "</div>" +
+            "</div>";
+        $('body').prepend($content);
+        // $('.doAction').click(function () {
+        //     $(this).parents('.alert-modal-overlay').fadeOut(500, function () {
+        //         $(this).remove();
+        //         deferred.resolve();
+        //     });
+        // });
+
+        setTimeout(function(){
+            $('.alert-modal-overlay').fadeOut(500, function () {
+                $(this).remove();
+                deferred.resolve();
+            });
+        }, 2000);
+
+    });
+    return deferred.promise();
+
+}
+
+
+
 function validateEmail(){
     var email = $("[name='email']").val();
     var regExp = /^[a-z0-9.]+@[a-z0-9]+\.[a-z]+(\.[a-z]+)?$/i;
@@ -70,6 +108,7 @@ function verifyLogin() {
 
 
 $(document).ready(function () {
+    $("head").append('<link rel="stylesheet" href="../Css/alert_box.css">');
     if(verifyLogin())
     {
         $('#login-state').html("Logout");
