@@ -347,7 +347,7 @@ def get_user(**kwargs):
 
 
 #find corrent user
-@app.route('/user/my/account', methods=['GET'])
+@app.route('/user/account', methods=['GET'])
 @Authorization
 @swag_from('API_Definitions/user_get_account.yml')
 def get_current_user(**kwargs):
@@ -424,7 +424,7 @@ def obp_associate_user(**kwargs):
             # future work, implementation of email confirmation mecanisme
             mongobd_user.find_one_and_update({'_id': ObjectId(payload)},
                                              {'$set': {'obp_authorization': ob_token}})
-            return Response(json_util.dumps({'response': 'Successful registration with your open bank account.'}),
+            return Response(json_util.dumps({'response': 'Successful association with your open bank account.'}),
                             status=200, mimetype='application/json')
         except (errors.DuplicateKeyError, mongoengine.errors.NotUniqueError):
             return Response(json_util.dumps({'response': 'This open bank account already exists.'}),
@@ -436,6 +436,23 @@ def obp_associate_user(**kwargs):
     return Response(json_util.dumps({'response': 'Same error occurred!'}), status=400,
                 mimetype='application/json')
 
+
+#remove obp association
+@app.route('/user/obp/associate', methods=['DELETE'])
+@Authorization
+@requires_roles('customer', 'merchant')
+@swag_from('API_Definitions/user_delete_obp_associate.yml')
+def obp_delete_user_association(**kwargs):
+    payload = kwargs['payload'];  # user id
+    try:
+        # future work, implementation of email confirmation mecanisme
+        mongobd_user.find_one_and_update({'_id': ObjectId(payload)},
+                                         {'$unset': {'obp_authorization': 1}})
+        return Response(json_util.dumps({'response': 'Delete obp association done with success'}),
+                        status=200, mimetype='application/json');
+    except errors.ServerSelectionTimeoutError:
+        return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=404,
+                        mimetype='application/json')
 
 
 # Check if user is associated on open bank project

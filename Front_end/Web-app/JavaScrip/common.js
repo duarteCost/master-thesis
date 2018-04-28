@@ -34,6 +34,52 @@ function Alert(title, msg) { /*change*/
 
 }
 
+function Confirm(title, msg, $true, $false) { /*change*/
+    var deferred = new $.Deferred(function () {
+        var $content =  "<div class='confirm-modal-overlay'>" +
+            "<div class='confirm-modal'><header>" +
+            " <h3> " + title + " </h3> " +
+            "</header>" +
+            "<div class='message'>" +
+            " <p> " + msg + " </p> " +
+            "</div>" +
+            "<footer>" +
+            "<div class='controls'>" +
+            " <button class='button button-danger doAction'>" + $true + "</button> " +
+            " <button class='button button-default cancelAction'>" + $false + "</button> " +
+            "</div>" +
+            "</footer>" +
+            "</div>" +
+            "</div>";
+        $('body').prepend($content);
+        $('.doAction').click(function () {
+            $(this).parents('.confirm-modal-overlay').fadeOut(500, function () {
+                $(this).remove();
+            });
+            deferred.resolve();
+        });
+        $('.cancelAction, .fa-close').click(function () {
+            $(this).parents('.confirm-modal-overlay').fadeOut(500, function () {
+                $(this).remove();
+            });
+            deferred.reject();
+        });
+
+    });
+    return deferred.promise();
+
+}
+
+
+function play_loader(){
+    $('.loader_container').css({ display: "block" });
+    $('body').css({"background-color":"rgba(230,230,230,0.8)"});
+}
+
+function stop_loader(){
+    $('.loader_container').css({ display: "none" });
+    $('body').css({"background-color":"white"});
+}
 
 
 function validateEmail(){

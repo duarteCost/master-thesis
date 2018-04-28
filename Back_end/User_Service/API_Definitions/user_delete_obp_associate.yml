@@ -1,0 +1,42 @@
+Delete user association on Open Bank Project
+Through this route the Nearsoft Payment Provider remove the user authorization in Open Bank to use the PSD2.
+**Authorization is mandatory**
+
+**To get athorization:**
+  1 - [Login](https://localhost:5001/apidocs/#!/user/login)
+  2 - Copy token from response
+  3 - Click on authorize on this page
+  4 - Paste the token into the text input
+---
+tags:
+- User
+security:
+  - JWT: []
+operationId: delete_associate
+produces:
+- application/json
+- application/xml
+responses:
+  200:
+    description: Delete of user association in Nearsoft Payment Provide done with success.
+    schema:
+      $ref: '#/definitions/success_remove_obp_association'
+  400:
+    description: Missing or invalid credentials
+    schema:
+      $ref: '#/definitions/error40X'
+  404:
+    description: Bad request
+    schema:
+      $ref: '#/definitions/error40X'
+
+definitions:
+  success_remove_obp_association:
+    properties:
+      response:
+        type: string
+
+  error40X:
+    properties:
+      response:
+        type: string

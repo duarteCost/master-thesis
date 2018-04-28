@@ -1,5 +1,5 @@
 Associate user with Open Bank Project to use PSD2
-Through this route the Nearsoft Payment Provider requires an authorization of the Open Bank to use the PSD2
+Through this route the Nearsoft Payment Provider requests an authorization of the Open Bank to use the PSD2
 (payments, consultations) routes for that user.
 Case the user does not have Open Bank PSD2 SandBox Account must:
   1 - Sign Up here [Open Bank PSD2 SandBox - Sing Up](https://psd2-api.openbankproject.com/user_mgt/sign_up)
@@ -38,7 +38,7 @@ parameters:
   required: true
 responses:
   200:
-    description: Successful association Nearsoft Payment Provaide with Open Bank
+    description: Successful association Nearsoft Payment Provide with Open Bank
     schema:
       $ref: '#/definitions/success_obp_association'
   400:

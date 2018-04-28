@@ -1,12 +1,16 @@
-function play_loader(){
-    $('.loader_container').css({ display: "block" });
-    $('body').css({"background-color":"rgba(230,230,230,0.8)"});
-}
 
-function stop_loader(){
-    $('.loader_container').css({ display: "none" });
-    $('body').css({"background-color":"white"});
-}
+// function get_user() {
+//     return $.ajax({
+//         url: "https://127.0.0.1:5001/user/account",
+//         method: "GET",
+//         data: true,
+//         beforeSend: function (xhr) {
+//             /* Authorization header */
+//             xhr.setRequestHeader("Authorization", getCookie("token"));
+//         }
+//     });
+// }
+
 
 
 function verify_login() {
@@ -32,6 +36,18 @@ function get_bank_accounts(){
         }
     });
 }
+function delete_obp_association(){
+    return $.ajax({
+        url: "https://127.0.0.1:5001/user/obp/associate",
+        method: "DELETE",
+        data: true,
+        beforeSend: function (xhr) {
+            /* Authorization header */
+            xhr.setRequestHeader("Authorization", getCookie("token"));
+        }
+    });
+}
+
 
 function list_bank_accounts(accounts) {
     console.log(accounts)
@@ -48,7 +64,7 @@ function list_bank_accounts(accounts) {
         $("#bank_accounts").append("<form id = '"+form_id+"' class='update_default_payment_account'>");
         $("#"+form_id).append("<input class='bank_id' type='hidden' name='bank_id' value='"+account.bank_id+"'>");
         $("#"+form_id).append("<input class='account_id' type='hidden' name='account_id' value='"+account.account_id+"'>");
-        $("#"+form_id).append("<button type='submit' class='btn choose_default_payment_account' type='button'>Choose</button>")
+        $("#"+form_id).append("<button type='submit' class='btn choose_default_payment_account' type='button'>Choose</button>");
         $("#bank_accounts").append("</form>");
         $("#bank_accounts").append("<br>");
         $("#bank_accounts").append("<br>");
@@ -60,11 +76,19 @@ function list_bank_accounts(accounts) {
 $(document).ready(function () {
     $("head").append('<link rel="stylesheet" href="../Css/accounts_box.css">');
     $("head").append('<link rel="stylesheet" href="../Css/loader.css">');
-    $("body").append('<div class="loader_container" style="display: none">')
-    $('.loader_container').append('<div class="loader"></div>')
+    $("head").append('<link rel="stylesheet" href="../Css/confirm_box.css">');
+    $("body").append('<div class="loader_container" style="display: none">');
+    $('.loader_container').append('<div class="loader"></div>');
+    play_loader();
     $.support.cors = true;
     if (verify_login()) {
-        play_loader();
+        $('.user_settings').append("<p><label>Hello,</p></label>");
+        $('.user_settings').append("<p><label>we hope you are enjoying our services!</label></p>");
+        $('.user_settings').append("<br>");
+        $('.user_settings').append("<p><label>If you wish to remove the association in OBP you can do so by clicking on the following button.</label></p>");
+        $('.user_settings').append("<br>");
+        $('.user_settings').append("<br>");
+        $('.user_settings').append("<button type='submit' class='btn remove_obp_association' type='button'><p>Remove <br>association</p></button>");
         $.ajax({
             method: "GET",
             url: "https://127.0.0.1:5003/aisp/payment/bank/account/default",
@@ -131,6 +155,21 @@ $(document).ready(function () {
 
     });
 
+
+    $(".user_settings").on('click', '.remove_obp_association', function() {
+        Confirm("Nearsoft Payment Provider", "Are you sure you want to remove your OBP association?", "Yes", "No").done(function () {
+            play_loader();
+            delete_obp_association().done(function (data) {
+                stop_loader();
+                Alert("Nearsoft Payment Provider", data.response+"...").done(function () {
+                    location.replace('open-bank-association.html');
+                });
+            });
+        }).fail(function () {
+            //nothing to do yet
+        });
+    });
+
     $('#bank_accounts').on('submit', '.update_default_payment_account', function (e) {
         e.preventDefault();
         var bank_id = $('.bank_id', this).val();
@@ -149,7 +188,7 @@ $(document).ready(function () {
 
                 $("#show-default-payment-account").empty();
                 stop_loader();
-                Alert("Nearsoft Payment Provader", data.response+"...").done(function () {
+                Alert("Nearsoft Payment Provider", data.response+"...").done(function () {
                     $("#show-default-payment-account").append("<h2><label>You have already chosen one default payment account!</label></h2>");
                     $("#show-default-payment-account").append("<br>");
                     $("#show-default-payment-account").append("<ul>");
