@@ -1,10 +1,10 @@
 import os
 import time
-
 import bson
 import mongoengine
 import requests
 import ssl
+import logging
 import Role_Lib.role_lib
 from functools import wraps
 from bson import ObjectId, json_util
@@ -15,6 +15,7 @@ from Role_Models.role_model import Role
 from flasgger import Swagger
 from flasgger import swag_from
 from werkzeug.security import check_password_hash
+from logging.handlers import RotatingFileHandler
 
 
 with open('config.json', 'r') as f:
@@ -163,9 +164,11 @@ def welcome_role():
 @requires_roles('merchant', 'customer')
 @swag_from('API_Definitions/role_get_user_role.yml')
 def get_current_user_role(user_id, **kwargs):
+    user_id_auth = kwargs['payload']  # user id
     roles = role_lib.get_roles(mongobd_role)
     if 'roles' in roles:
         user_roles_name = role_lib.user_roles(roles, user_id)
+        app.logger.info('/role/user/<user_id>: User '+user_id_auth+' get all user roles for user '+user_id+'!')
         return Response(json_util.dumps({'roles': user_roles_name}), status=200,
                         mimetype='application/json')
     elif 'No roles found' in roles:
@@ -182,8 +185,10 @@ def get_current_user_role(user_id, **kwargs):
 @requires_roles('merchant', 'customer')
 @swag_from('API_Definitions/role_get_all.yml')
 def get_all_role(**kwargs):
+    user_id = kwargs['payload'];  # user id
     roles = role_lib.get_roles(mongobd_role)
     if 'roles' in roles:
+        app.logger.info('/role/all: User ' + user_id + ' get all roles!')
         return Response(json_util.dumps({'roles':roles}), status=200,
                         mimetype='application/json')
     elif 'No roles found' in roles:
@@ -203,6 +208,7 @@ def get_all_role(**kwargs):
 @requires_roles('merchant', 'customer')
 @swag_from('API_Definitions/role_get_role.yml')
 def get_role(role_name, **kwargs):
+    user_id = kwargs['payload']  # user id
     print(role_name)
     try:
         roles = mongobd_role.find({'name': str(role_name)})
@@ -210,6 +216,7 @@ def get_role(role_name, **kwargs):
             return Response(json_util.dumps({'response': 'No roles found'}),
                             status=400, mimetype='application/json')
         else:
+            app.logger.info('/role/<role_name>: User ' + user_id + ' get role '+role_name+'!')
             return Response(json_util.dumps(roles), status=200,
                             mimetype='application/json')
     except errors.ServerSelectionTimeoutError:
@@ -221,6 +228,7 @@ def get_role(role_name, **kwargs):
 @requires_roles('merchant')
 @swag_from('API_Definitions/role_post_role.yml')
 def create_role(**kwargs):
+    user_id = kwargs['payload']  # user id
     request_params = request.form
     print(request_params)
     if 'name' not in request_params:
@@ -237,6 +245,7 @@ def create_role(**kwargs):
         mongoengine.connect(db='Role', host='localhost', port=27017, username = USERNAME, password = PASSWORD,
                             authentication_source=AUTHSOURCE, authentication_mechanism='SCRAM-SHA-1')
         Role(ObjectId(), name, description).save()
+        app.logger.info('/role: User ' + user_id + ' post role ' + name + '!')
         return Response(json_util.dumps({'response': 'Successful operation'}),
                         status=200, mimetype='application/json')
     except (errors.DuplicateKeyError, mongoengine.errors.NotUniqueError):
@@ -252,6 +261,7 @@ def create_role(**kwargs):
 @requires_roles('merchant')
 @swag_from('API_Definitions/role_post_user_permissions.yml')
 def add_permissions(role_name, user_id, **kwargs):
+    user_id_auth = kwargs['payload']  # user id
     first_authorization = request.headers.get('First_authorization')
     print(first_authorization)
     if bson.objectid.ObjectId.is_valid(user_id) == False:
@@ -267,6 +277,7 @@ def add_permissions(role_name, user_id, **kwargs):
                 return Response(json_util.dumps({'response': 'The role does not exist or is incorrect.'}),
                                 status=200, mimetype='application/json')
             else:
+                app.logger.info('/role/<role_name>/permissions/user/<user_id>: User ' + user_id_auth + ' add role '+role_name+' to the user ' + user_id + '!')
                 return Response(json_util.dumps({'response': 'Role added successfully.'}),
                                 status=200, mimetype='application/json')
         except errors.ServerSelectionTimeoutError:
@@ -276,6 +287,9 @@ def add_permissions(role_name, user_id, **kwargs):
 
 
 if __name__ == '__main__':
+    handler = RotatingFileHandler('role.log', maxBytes=10000, backupCount=1)
+    handler.setLevel(logging.INFO)
+    app.logger.addHandler(handler)
     context.load_cert_chain('./Certificates/ssl.crt', './Certificates/ssl.key')
     requests.packages.urllib3.disable_warnings()
     port = int(os.environ.get('PORT', 5005))

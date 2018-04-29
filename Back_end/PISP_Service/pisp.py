@@ -10,6 +10,8 @@ from flask_cors import CORS
 from pymongo import MongoClient, errors
 from flasgger import swag_from
 from flasgger import Swagger
+import logging
+from logging.handlers import RotatingFileHandler
 from PISP_Models.PISP_receiver_account import Bank_account
 import PISP_Lib.obp
 obp = PISP_Lib.obp
@@ -261,11 +263,13 @@ def welcome_ob():
 @requires_roles('customer', 'merchant')
 @swag_from('API_Definitions/pisp_get_charge.yml')
 def get_charge(bank_id, account_id,**kwargs):
+    user_id = kwargs['payload'];  # user id
     dl_token = kwargs['user_ob_token'] # Get the user authorization given by the open bank
     set_baseurl_apiversion() #Fill the API url and version with config file data
     challenge_types = obp.getChallengeTypes(bank_id, account_id, dl_token) #See Lib
     charge = challenge_types[0]['charge']
     response = {'charge': charge}
+    app.logger.info('/pisp/bank/<bank_id>/account/<account_id>/charge: User ' + user_id + ' get the charge for BANK_ID='+bank_id+' and ACCOUNT_ID '+account_id+'!');
     return Response(json_util.dumps({'response': response}), status=200,
                     mimetype='application/json')
 
@@ -279,6 +283,7 @@ def get_charge(bank_id, account_id,**kwargs):
 @requires_roles('customer', 'merchant')
 @swag_from('API_Definitions/pisp_post_initiate_transaction_request.yml')
 def payment_initialization(bank_id, account_id,**kwargs):
+    user_id = kwargs['payload'];  # user id
     token = kwargs['token']
     set_baseurl_apiversion()
     request_params = request.form
@@ -327,6 +332,9 @@ def payment_initialization(bank_id, account_id,**kwargs):
                         mimetype='application/json')
     else:
         save_transaction_record(bank_id, account_id, OUR_VALUE, OUR_CURRENCY, description, initiate_transaction_response['status'], token)
+        app.logger.info('/pisp/bank/<bank_id>/account/<account_id>/initiate-transaction-request: User ' + user_id + ' '
+         'initiate a transaction request on BANK_ID=' + bank_id + ' and ACCOUNT_ID=' + account_id + '! '
+                    'Transaction od is '+initiate_transaction_response['id']['value']+'!')
         return Response(json_util.dumps({'response': initiate_transaction_response}), status=200,
                     mimetype='application/json')
 
@@ -338,6 +346,7 @@ def payment_initialization(bank_id, account_id,**kwargs):
 @requires_roles('customer', 'merchant')
 @swag_from('API_Definitions/pisp_post_answer_challenge.yml')
 def payment_answer_challenge(bank_id, account_id,**kwargs):
+    user_id = kwargs['payload'];  # user id
     token = kwargs['token']
     set_baseurl_apiversion()
     request_params = request.form
@@ -368,6 +377,8 @@ def payment_answer_challenge(bank_id, account_id,**kwargs):
     print("Transaction status: {0}".format(challenge_response))
     save_transaction_record(bank_id, account_id, OUR_VALUE, OUR_CURRENCY, description,
                             status, token)
+    app.logger.info('/pisp/bank/<bank_id>/account/<account_id>/answer-challenge: User ' + user_id + ' '
+                                'answer challenge of transaction '+transaction_req_id+'!')
     return Response(json_util.dumps({'response': challenge_response}), status=200,
                     mimetype='application/json')
 # end of payment routs
@@ -379,6 +390,7 @@ def payment_answer_challenge(bank_id, account_id,**kwargs):
 @requires_roles('merchant')
 @swag_from('API_Definitions/pisp_post_receiver_bank_account.yml')
 def post_receiver_account(**kwargs):
+    user_id = kwargs['payload'];  # user id
     request_params = request.form
     print(request_params)
     if 'bank_id' not in request_params:
@@ -399,12 +411,12 @@ def post_receiver_account(**kwargs):
             mongoengine.connect(db='Pisp_receiver_account_db', host='localhost', port=27017, username = USERNAME, password = PASSWORD,
                             authentication_source=AUTHSOURCE, authentication_mechanism='SCRAM-SHA-1')
             Bank_account(ObjectId(), bank_id, account_id).save()
-
+            app.logger.info('/pisp/receiver/bank/account: User ' + user_id + ' define the receiver payment account!')
             return Response(json_util.dumps({'response': 'Successful definition your receiver bank account.'}),
                             status=200, mimetype='application/json')
         else:
-            mongodb.find_one_and_update({},
-                                        {'$set': {'bank_id': bank_id, 'account_id': account_id}})
+            mongodb.find_one_and_update({}, {'$set': {'bank_id': bank_id, 'account_id': account_id}})
+            app.logger.info('/pisp/receiver/bank/account: User ' + user_id + ' update the receiver payment account!')
             return Response(json_util.dumps({'response': 'Successful update of your receiver bank account.'}),
                             status=200, mimetype='application/json')
     except (errors.DuplicateKeyError, mongoengine.errors.NotUniqueError):
@@ -420,22 +432,27 @@ def post_receiver_account(**kwargs):
 @requires_roles('merchant')
 @swag_from('API_Definitions/pisp_get_receiver_bank_account.yml')
 def get_receiver_account(**kwargs):
-        receiver_account_response = get_receiver_account_method()
-        if 'Mongodb is not running' in receiver_account_response:
-            return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=404,
-                     mimetype='application/json')
-        elif 'account_data' in receiver_account_response:
-            receiver_account = receiver_account_response['account_data']
-            return Response(json_util.dumps({"response": {"bank_id": receiver_account['bank_id'],
-                                                          "account_id": receiver_account['account_id']}}), status=200,
-                            mimetype='application/json')
-        else:
-            return Response(json_util.dumps({'response': 'No one receiver bank account has been found'}),
-                            status=400, mimetype='application/json')
+    user_id = kwargs['payload'];  # user id
+    receiver_account_response = get_receiver_account_method()
+    if 'Mongodb is not running' in receiver_account_response:
+        return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=404,
+                 mimetype='application/json')
+    elif 'account_data' in receiver_account_response:
+        receiver_account = receiver_account_response['account_data']
+        app.logger.info('/pisp/receiver/bank/account: User ' + user_id + ' get the receiver payment account!')
+        return Response(json_util.dumps({"response": {"bank_id": receiver_account['bank_id'],
+                                                      "account_id": receiver_account['account_id']}}), status=200,
+                        mimetype='application/json')
+    else:
+        return Response(json_util.dumps({'response': 'No one receiver bank account has been found'}),
+                        status=400, mimetype='application/json')
 
 
 
 if __name__ == '__main__':
+    handler = RotatingFileHandler('pisp.log', maxBytes=10000, backupCount=1)
+    handler.setLevel(logging.INFO)
+    app.logger.addHandler(handler)
     context.load_cert_chain('./Certificates/ssl.crt', './Certificates/ssl.key')
     requests.packages.urllib3.disable_warnings()
     port = int(os.environ.get('PORT', 5002))

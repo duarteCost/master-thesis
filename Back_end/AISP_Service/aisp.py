@@ -11,6 +11,8 @@ from pymongo import MongoClient, errors
 from AISP_Models.aisp_payment_account import Bank_account
 from flasgger import swag_from
 from flasgger import Swagger
+import logging
+from logging.handlers import RotatingFileHandler
 
 import AISP_Lib.obp
 obp = AISP_Lib.obp
@@ -243,12 +245,16 @@ def post_my_default_payment_account(**kwargs):
             mongoengine.connect(db='Aisp_db', host='localhost', port=27017, username = USERNAME, password = PASSWORD,
                             authentication_source=AUTHSOURCE, authentication_mechanism='SCRAM-SHA-1')
             Bank_account(ObjectId(), bank_id, account_id, ObjectId(payload)).save()
-
+            app.logger.info('/aisp/payment/bank/account/default: User '+payload+' define the default payment account to'
+                                                    ' BANK_ID='+bank_id+' ACCOUNT_ID='+account_id+'!');
             return Response(json_util.dumps({'response': 'Successful definition your default payment account.'}),
                             status=200, mimetype='application/json')
         else:
             mongodb_bank_account.find_one_and_update({'user_id': ObjectId(payload)},
                                                  {'$set': {'bank_id': bank_id, 'account_id' : account_id}})
+            app.logger.info(
+                '/aisp/payment/bank/account/default: User ' + payload + ' update the default payment account to '
+                                                    'BANK_ID=' + bank_id + ' ACCOUNT_ID=' + account_id + '!');
             return Response(json_util.dumps({'response': 'Successful update of your default payment account.'}),
                             status=200, mimetype='application/json')
     except (errors.DuplicateKeyError, mongoengine.errors.NotUniqueError):
@@ -274,6 +280,7 @@ def get_my_default_payment_account(**kwargs):
                             status=400, mimetype='application/json')
         else:
             print(payment_account)
+            app.logger.info('/aisp/payment/bank/account/default: User ' + user_id + ' check default payment account information!')
             return Response(json_util.dumps({"response": {"bank_id" :  payment_account['bank_id'],
                             "account_id" : payment_account['account_id'] }}), status=200, mimetype='application/json')
     except errors.ServerSelectionTimeoutError:
@@ -288,6 +295,7 @@ def get_my_default_payment_account(**kwargs):
 @requires_roles('customer', 'merchant')
 @swag_from('API_Definitions/aisp_get_bank_accounts.yml')
 def get_my_bank_accounts(**kwargs):
+    user_id = kwargs['payload']
     set_baseurl_apiversion()
     dl_token = kwargs['user_ob_token']  # Get the user authorization given by the open bank
     banks_accounts = obp.all_accounts(dl_token)
@@ -299,6 +307,7 @@ def get_my_bank_accounts(**kwargs):
         account_details = obp.getAccountById(our_bank, our_account, dl_token)
         available_banks_accounts.append({'bank_id': account_details['bank_id'], 'account_id': account_details['id'],
                                          'balance' : account_details['balance']})
+    app.logger.info('/aisp/bank/accounts: User ' + user_id + ' check all bank accounts!')
     return Response(json_util.dumps({'response': available_banks_accounts}), status=200,
                     mimetype='application/json')
 
@@ -312,6 +321,7 @@ def get_my_bank_accounts(**kwargs):
 @requires_roles('customer', 'merchant')
 @swag_from('API_Definitions/aisp_get_payment_bank_accounts.yml')
 def define_avilable_accounts(**kwargs):
+    user_id = kwargs['payload']
     set_baseurl_apiversion()
     print(request.args.get('amount') )
     if 'amount' not in request.args:
@@ -331,6 +341,7 @@ def define_avilable_accounts(**kwargs):
             available_banks_accounts.append({'bank_id': account_details['bank_id'], 'account_id': account_details['id'],
                                          'balance' : account_details['balance']})
     print(available_banks_accounts)
+    app.logger.info('/aisp/payment/bank/accounts: User ' + user_id + 'check the accounts with balance more then '+request.args.get('amount')+'!')
     return Response(json_util.dumps({'response': available_banks_accounts }), status=200,
                     mimetype='application/json')
 
@@ -345,15 +356,20 @@ def define_avilable_accounts(**kwargs):
 @requires_roles('customer', 'merchant')
 @swag_from('API_Definitions/aisp_get_transactions.yml')
 def get_transactions(bank_id, account_id, **kwargs):
+    user_id = kwargs['payload']
     set_baseurl_apiversion()
     dl_token = kwargs['user_ob_token']  # Get the user authorization given by the open bank
     transactions = obp.getTransactions(bank_id, account_id, dl_token)  # See Lib
+    app.logger.info('/aisp/bank/<bank_id>/account/<account_id>/transactions: User ' + user_id + 'check all transaction of BANK_ID='+bank_id+' and ACCOUNT_ID='+account_id+'!');
     return Response(json_util.dumps({'response': transactions}), status=200,
                     mimetype='application/json')
 
 
 
 if __name__ == '__main__':
+    handler = RotatingFileHandler('aisp.log', maxBytes=10000, backupCount=1)
+    handler.setLevel(logging.INFO)
+    app.logger.addHandler(handler)
     context.load_cert_chain('./Certificates/ssl.crt', './Certificates/ssl.key')
     requests.packages.urllib3.disable_warnings()
     port = int(os.environ.get('PORT', 5003))

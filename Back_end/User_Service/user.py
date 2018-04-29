@@ -13,6 +13,8 @@ from pymongo import MongoClient, errors
 from flasgger import swag_from
 from werkzeug.security import check_password_hash, generate_password_hash
 from flasgger import Swagger
+import logging
+from logging.handlers import RotatingFileHandler
 
 user_lib = User_Lib.user_lib
 
@@ -41,7 +43,6 @@ time.sleep(5)
 
 print(mongobd_user)
 context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
-
 
 
 
@@ -201,6 +202,7 @@ def create_admin():  # Create admin user, need to be added security parameters
             if "token" in authentication:
                 status_custumer = user_lib.associate_role(authentication['token'], "customer", object_id, ROLE_HOST_IP)  # Save admin "customer" role in Role micro server through Lib method
                 status_merchant = user_lib.associate_role(authentication['token'], "merchant", object_id, ROLE_HOST_IP)  # Save admin "merchant" role in Role micro server through Lib method
+                app.logger.info('Register: User ' + object_id + ' register in NPP as "Admin" and "Customer"!');
                 if (status_custumer == "Success" and status_merchant == "Success"):
                     return Response(json_util.dumps({'response': 'Successful operation'}),
                                     status=200, mimetype='application/json')
@@ -265,6 +267,7 @@ def create_user():
             if "token" in authentication:
                 status = user_lib.associate_role(authentication['token'], "customer", object_id, ROLE_HOST_IP)  # Save user role in Role micro server through Lib method
                 if (status == "Success"):
+                    app.logger.info('Register: User '+object_id+' register in NPP as "Customer"!');
                     return Response(json_util.dumps({'response': 'Successful operation'}),
                                     status=200, mimetype='application/json')
                 else:
@@ -314,9 +317,11 @@ def login_user():
     authentication = user_lib.authentication_function(user_id,
                                                       AUTH_HOST_IP)  # Get login token through Lib method
     if "token" in authentication:
+        app.logger.info('Login: User '+user_id+' login!');
         return Response(json_util.dumps(authentication), status=200,
                      mimetype='application/json')
     else:
+        app.logger.error('Login: Error getting authentication!', 42)
         return Response(json_util.dumps({'response':authentication}), status=400,
                         mimetype='application/json')
 
@@ -330,12 +335,14 @@ def login_user():
 @swag_from('API_Definitions/user_get_all.yml')
 # Handler for HTTP GET - "/user/all"
 def get_user(**kwargs):
+    user_id = kwargs['payload'];
     try:
         users = mongobd_user.find({})
         if users is None:
             return Response(json_util.dumps({'response': 'No users found'}),
                             status=400, mimetype='application/json')
         else:
+            #app.logger.info('Get all user: User ' + user_id + ' get all user!');
             return Response(json_util.dumps(users), status=200,
                             mimetype='application/json')
     except errors.ServerSelectionTimeoutError:
@@ -424,6 +431,7 @@ def obp_associate_user(**kwargs):
             # future work, implementation of email confirmation mecanisme
             mongobd_user.find_one_and_update({'_id': ObjectId(payload)},
                                              {'$set': {'obp_authorization': ob_token}})
+            app.logger.info('OBP association: User ' + payload + ' associate with success on OBP!');
             return Response(json_util.dumps({'response': 'Successful association with your open bank account.'}),
                             status=200, mimetype='application/json')
         except (errors.DuplicateKeyError, mongoengine.errors.NotUniqueError):
@@ -448,7 +456,8 @@ def obp_delete_user_association(**kwargs):
         # future work, implementation of email confirmation mecanisme
         mongobd_user.find_one_and_update({'_id': ObjectId(payload)},
                                          {'$unset': {'obp_authorization': 1}})
-        return Response(json_util.dumps({'response': 'Delete obp association done with success'}),
+        app.logger.info('Remove OBP association: User ' + payload + ' removes OBP association!');
+        return Response(json_util.dumps({'response': 'OBP association removed with success'}),
                         status=200, mimetype='application/json');
     except errors.ServerSelectionTimeoutError:
         return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=404,
@@ -479,10 +488,17 @@ def get_obp_authorization(**kwargs):
                         mimetype='application/json')
 
 
-
+# @app.route('/user/log', methods=['GET'])
+# @swag_from('API_Definitions/user_get_log.yml')
+# def get_log(**kwargs):
+#     logfile = logging.getLogger('user')
+#     return Response(logfile);
 
 
 if __name__ == '__main__':
+    handler = RotatingFileHandler('user.log', maxBytes=10000, backupCount=1)
+    handler.setLevel(logging.INFO)
+    app.logger.addHandler(handler)
     context.load_cert_chain('./Certificates/ssl.crt', './Certificates/ssl.key')
     requests.packages.urllib3.disable_warnings()
     port = int(os.environ.get('PORT', 5001))
