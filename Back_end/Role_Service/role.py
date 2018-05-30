@@ -150,8 +150,9 @@ def verify_db():
     if roles.count() == 0:
         mongoengine.connect(db='Role', host='localhost', port=27017, username = USERNAME, password = PASSWORD,
                             authentication_source=AUTHSOURCE, authentication_mechanism='SCRAM-SHA-1')
-        Role(ObjectId(), "merchant", "Merchant role").save()
+        Role(ObjectId(), "admin", "Admin role").save()
         Role(ObjectId(), "customer", "Customer role").save()
+        Role(ObjectId(), "merchant", "Merchant role").save()
 
 @app.route('/', methods=['GET'])
 def welcome_role():
@@ -161,7 +162,7 @@ def welcome_role():
 # Return all user roles
 @app.route('/role/user/<user_id>', methods = ['GET'])
 @Authorization
-@requires_roles('merchant', 'customer')
+@requires_roles('customer', 'admin')
 @swag_from('API_Definitions/role_get_user_role.yml')
 def get_current_user_role(user_id, **kwargs):
     user_id_auth = kwargs['payload']  # user id
@@ -182,7 +183,7 @@ def get_current_user_role(user_id, **kwargs):
 
 @app.route('/role/all', methods=['GET'])
 @Authorization
-@requires_roles('merchant', 'customer')
+@requires_roles('customer', 'admin')
 @swag_from('API_Definitions/role_get_all.yml')
 def get_all_role(**kwargs):
     user_id = kwargs['payload'];  # user id
@@ -205,7 +206,7 @@ def get_all_role(**kwargs):
 
 @app.route('/role/<role_name>', methods=['GET'])
 @Authorization
-@requires_roles('merchant', 'customer')
+@requires_roles('customer', 'admin')
 @swag_from('API_Definitions/role_get_role.yml')
 def get_role(role_name, **kwargs):
     user_id = kwargs['payload']  # user id
@@ -225,7 +226,7 @@ def get_role(role_name, **kwargs):
 
 @app.route('/role', methods=['POST'])
 @Authorization
-@requires_roles('merchant')
+@requires_roles('admin')
 @swag_from('API_Definitions/role_post_role.yml')
 def create_role(**kwargs):
     user_id = kwargs['payload']  # user id
@@ -258,7 +259,7 @@ def create_role(**kwargs):
 
 @app.route('/role/<role_name>/permissions/user/<user_id>', methods=['POST'])
 @Authorization
-@requires_roles('merchant')
+@requires_roles('admin')
 @swag_from('API_Definitions/role_post_user_permissions.yml')
 def add_permissions(role_name, user_id, **kwargs):
     user_id_auth = kwargs['payload']  # user id

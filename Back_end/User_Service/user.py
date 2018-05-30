@@ -135,6 +135,14 @@ def requires_roles(*roles):
     return wrapper
 
 
+def delete_user(user_id):
+    try:
+        mongobd_user.remove({'_id': ObjectId(user_id)})
+        app.logger.info('Remove user: User ' + user_id + ' was removed with success.!');
+        return True
+    except errors.ServerSelectionTimeoutError:
+        return False
+
 
 app = Flask(__name__)
 CORS(app)
@@ -201,8 +209,8 @@ def create_admin():  # Create admin user, need to be added security parameters
             authentication = user_lib.authentication_function(str(object_id), AUTH_HOST_IP) # Get login token through Lib method
             if "token" in authentication:
                 status_custumer = user_lib.associate_role(authentication['token'], "customer", object_id, ROLE_HOST_IP)  # Save admin "customer" role in Role micro server through Lib method
-                status_merchant = user_lib.associate_role(authentication['token'], "merchant", object_id, ROLE_HOST_IP)  # Save admin "merchant" role in Role micro server through Lib method
-                app.logger.info('Register: User ' + object_id + ' register in NPP as "Admin" and "Customer"!');
+                status_merchant = user_lib.associate_role(authentication['token'], "admin", object_id, ROLE_HOST_IP)  # Save admin "merchant" role in Role micro server through Lib method
+                app.logger.info('Register: User ' + str(object_id) + ' register in NPP as "Admin" and "Customer"!');
                 if (status_custumer == "Success" and status_merchant == "Success"):
                     return Response(json_util.dumps({'response': 'Successful operation'}),
                                     status=200, mimetype='application/json')
@@ -221,6 +229,7 @@ def create_admin():  # Create admin user, need to be added security parameters
     except errors.ServerSelectionTimeoutError:
         return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=404,
                         mimetype='application/json')
+
 
 
 @app.route('/user/', methods=['GET'])
@@ -267,7 +276,7 @@ def create_user():
             if "token" in authentication:
                 status = user_lib.associate_role(authentication['token'], "customer", object_id, ROLE_HOST_IP)  # Save user role in Role micro server through Lib method
                 if (status == "Success"):
-                    app.logger.info('Register: User '+object_id+' register in NPP as "Customer"!');
+                    app.logger.info('Register: User '+str(object_id)+' register in NPP as "Customer"!');
                     return Response(json_util.dumps({'response': 'Successful operation'}),
                                     status=200, mimetype='application/json')
                 else:
@@ -331,7 +340,7 @@ def login_user():
 
 @app.route('/user/all', methods=['GET'])
 @Authorization
-@requires_roles('merchant')
+@requires_roles('admin')
 @swag_from('API_Definitions/user_get_all.yml')
 # Handler for HTTP GET - "/user/all"
 def get_user(**kwargs):
@@ -356,6 +365,7 @@ def get_user(**kwargs):
 #find corrent user
 @app.route('/user/account', methods=['GET'])
 @Authorization
+@requires_roles('customer')
 @swag_from('API_Definitions/user_get_account.yml')
 def get_current_user(**kwargs):
     user_id = kwargs['payload']
@@ -448,7 +458,7 @@ def obp_associate_user(**kwargs):
 #remove obp association
 @app.route('/user/obp/associate', methods=['DELETE'])
 @Authorization
-@requires_roles('customer', 'merchant')
+@requires_roles('customer', 'admin')
 @swag_from('API_Definitions/user_delete_obp_associate.yml')
 def obp_delete_user_association(**kwargs):
     payload = kwargs['payload'];  # user id
@@ -464,10 +474,36 @@ def obp_delete_user_association(**kwargs):
                         mimetype='application/json')
 
 
+@app.route('/user/<user_id>', methods=['DELETE'])
+@Authorization
+@requires_roles('admin')
+@swag_from('API_Definitions/delete_user_by_admin.yml')
+def delete_user_by_admin(user_id, **kwargs):
+    if delete_user(user_id):
+        return Response(json_util.dumps({'response': ' User ' + user_id + ' was removed with success.!'}),
+                        status=200, mimetype='application/json')
+    else:
+        return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=404,
+                        mimetype='application/json')
+
+
+@app.route('/user', methods=['DELETE'])
+@Authorization
+@requires_roles('customer', 'admin')
+@swag_from('API_Definitions/delete_user.yml')
+def delete_current_user(**kwargs):
+    user_id = kwargs['payload']
+    if delete_user(user_id):
+        return Response(json_util.dumps({'response': ' User ' + user_id + ' was removed with success.!'}),
+                        status=200, mimetype='application/json')
+    else:
+        return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=404,
+                        mimetype='application/json')
+
 # Check if user is associated on open bank project
 @app.route('/user/account/obp/authorization', methods=['GET'])
 @Authorization
-@requires_roles('customer', 'merchant')
+@requires_roles('customer', 'admin')
 @swag_from('API_Definitions/user_get_obp_authorization.yml')
 def get_obp_authorization(**kwargs):
     user_id = kwargs['payload']
@@ -486,13 +522,6 @@ def get_obp_authorization(**kwargs):
     except errors.ServerSelectionTimeoutError:
         return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=404,
                         mimetype='application/json')
-
-
-# @app.route('/user/log', methods=['GET'])
-# @swag_from('API_Definitions/user_get_log.yml')
-# def get_log(**kwargs):
-#     logfile = logging.getLogger('user')
-#     return Response(logfile);
 
 
 if __name__ == '__main__':

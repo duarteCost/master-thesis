@@ -164,10 +164,10 @@ def welcome_ob():
                     mimetype='application/json')
 
 
-# Post default payment account
+# Post transaction
 @app.route('/transactions_record/bank/<bank_id>/account/<account_id>/transactions', methods=['POST'])
 @Authorization
-@requires_roles('customer', 'merchant')
+@requires_roles('customer', 'admin')
 @swag_from('API_Definitions/transaction-record_post_transaction.yml')
 def post_transaction(bank_id, account_id, **kwargs):
     payload = kwargs['payload'];  # user id
@@ -206,10 +206,10 @@ def post_transaction(bank_id, account_id, **kwargs):
                         mimetype='application/json')
 
 
-# Get default payment account
+# Get bank account transaction
 @app.route('/transactions_record/bank/<bank_id>/account/<account_id>/transactions', methods=['GET'])
 @Authorization
-@requires_roles('customer', 'merchant')
+@requires_roles('customer', 'admin')
 @swag_from('API_Definitions/transaction-record_get_user_transaction.yml')
 def get_user_transactions(bank_id, account_id, **kwargs):
     user_id = kwargs['payload']
@@ -224,9 +224,58 @@ def get_user_transactions(bank_id, account_id, **kwargs):
         return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=404,
                         mimetype='application/json')
 
+# Get user account transaction by admin
+@app.route('/transactions_record/user/<user_id>/transactions', methods=['GET'])
+@Authorization
+@requires_roles('admin')
+@swag_from('API_Definitions/transaction-record_get_user_transaction_by_admin.yml')
+def get_user_transaction_by_admin(user_id, **kwargs):
+    try:
+        user_transactions = mongodb_transactions.find(
+            {'user_id': ObjectId(user_id)}).sort("modifiedAt", -1)
+        if user_transactions is None:
+            return Response(json_util.dumps({'response': 'No transactions has been found for that user'}),
+                            status=400, mimetype='application/json')
+        else:
+            return Response(json_util.dumps({"response": user_transactions}), status=200,
+                            mimetype='application/json')
+    except errors.ServerSelectionTimeoutError:
+        return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=404,
+                        mimetype='application/json')
+
+@app.route('/transactions_record/transactions', methods=['GET'])
+@Authorization
+@requires_roles('customer', 'admin')
+@swag_from('API_Definitions/transaction-record_get_user_transaction_by_user.yml')
+def get_user_transactions_by_user(**kwargs):
+    user_id = kwargs['payload']
+    try:
+        user_transactions = mongodb_transactions.find(
+            {'user_id': ObjectId(user_id)}).sort("modifiedAt", -1)
+        if user_transactions is None:
+            return Response(json_util.dumps({'response': 'No transactions has been found for that user'}),
+                            status=400, mimetype='application/json')
+        else:
+            return Response(json_util.dumps({"response": user_transactions}), status=200,
+                            mimetype='application/json')
+    except errors.ServerSelectionTimeoutError:
+        return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=404,
+                        mimetype='application/json')
 
 
-
+@app.route('/transactions_record/transactions', methods=['DELETE'])
+@Authorization
+@requires_roles('customer', 'admin')
+@swag_from('API_Definitions/transaction-record_delete_user_transaction_by_user.yml')
+def delete_user_transactions_by_user(**kwargs):
+    user_id = kwargs['payload']
+    try:
+        mongodb_transactions.remove({'user_id': ObjectId(user_id)})
+        return Response(json_util.dumps({'response': 'Transactions successfully deleted.'}),
+                            status=200, mimetype='application/json')
+    except errors.ServerSelectionTimeoutError:
+        return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=404,
+                        mimetype='application/json')
 
 
 if __name__ == '__main__':

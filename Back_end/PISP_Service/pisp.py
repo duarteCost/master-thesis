@@ -260,7 +260,7 @@ def welcome_ob():
 @app.route('/pisp/bank/<bank_id>/account/<account_id>/charge', methods=['GET'])
 @Authorization
 @OB_Authorization
-@requires_roles('customer', 'merchant')
+@requires_roles('customer', 'admin')
 @swag_from('API_Definitions/pisp_get_charge.yml')
 def get_charge(bank_id, account_id,**kwargs):
     user_id = kwargs['payload'];  # user id
@@ -280,7 +280,7 @@ def get_charge(bank_id, account_id,**kwargs):
 @app.route('/pisp/bank/<bank_id>/account/<account_id>/initiate-transaction-request', methods=['POST'])
 @Authorization
 @OB_Authorization
-@requires_roles('customer', 'merchant')
+@requires_roles('customer', 'admin')
 @swag_from('API_Definitions/pisp_post_initiate_transaction_request.yml')
 def payment_initialization(bank_id, account_id,**kwargs):
     user_id = kwargs['payload'];  # user id
@@ -343,7 +343,7 @@ def payment_initialization(bank_id, account_id,**kwargs):
 @app.route('/pisp/bank/<bank_id>/account/<account_id>/answer-challenge', methods=['POST'])
 @Authorization
 @OB_Authorization
-@requires_roles('customer', 'merchant')
+@requires_roles('customer', 'admin')
 @swag_from('API_Definitions/pisp_post_answer_challenge.yml')
 def payment_answer_challenge(bank_id, account_id,**kwargs):
     user_id = kwargs['payload'];  # user id
@@ -447,6 +447,20 @@ def get_receiver_account(**kwargs):
         return Response(json_util.dumps({'response': 'No one receiver bank account has been found'}),
                         status=400, mimetype='application/json')
 
+@app.route('/pisp/receiver/bank/account', methods=['DELETE'])
+@Authorization
+@requires_roles('merchant')
+@swag_from('API_Definitions/pisp_delete_receiver_bank_account.yml')
+def delete_receiver_account(**kwargs):
+    user_id = kwargs['payload'];
+    try:
+        mongodb.remove({})
+        app.logger.info('/pisp/receiver/bank/account: User ' + user_id + ' delete the receiver payment account!')
+        return Response(json_util.dumps({"response": "Receiver bank account successfully deleted."}), status=200,
+                        mimetype='application/json')
+    except errors.ServerSelectionTimeoutError:
+        return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=404,
+                        mimetype='application/json')
 
 
 if __name__ == '__main__':

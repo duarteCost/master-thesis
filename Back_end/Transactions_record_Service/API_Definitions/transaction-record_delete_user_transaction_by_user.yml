@@ -1,5 +1,5 @@
-Get user account
-Get my Nearsoft Payment Provider Account.
+Delete user transaction
+This route delete all user transaction
 
 **Authorization is mandatory**
 
@@ -10,11 +10,10 @@ Get my Nearsoft Payment Provider Account.
   4 - Paste the token into the text input
 ---
 tags:
-- User
+- Transactions_record
 security:
   - JWT: []
-summary: Get user by user ID
-operationId: my_account
+operationId: delete_user_transactions
 produces:
 - application/json
 - application/xml
@@ -22,7 +21,7 @@ responses:
   200:
     description: Successful operation
     schema:
-      $ref: '#/definitions/success_get_user'
+      $ref: '#/definitions/success_delete_transaction'
   400:
     description: Missing or invalid credentials
     schema:
@@ -33,27 +32,11 @@ responses:
       $ref: '#/definitions/error40X'
 
 definitions:
-  success_get_user:
-    type: object
+
+  success_delete_transaction:
     properties:
-      id:
+      response:
         type: string
-      name:
-        type: string
-      surname:
-        type: string
-      email:
-        type: string
-      password:
-        type: string
-      modifiedAt:
-        type: string
-        format: date-time
-      obp_authorization:
-        type: string
-        description: Only if the user is associated with obp
-    xml:
-      name: User
 
   error40X:
     properties:

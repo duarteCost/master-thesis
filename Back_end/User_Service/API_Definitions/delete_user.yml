@@ -1,6 +1,5 @@
-Get user account
-Get my Nearsoft Payment Provider Account.
-
+Delete user account
+Through this route the user can remove your account.
 **Authorization is mandatory**
 
 **To get athorization:**
@@ -13,16 +12,15 @@ tags:
 - User
 security:
   - JWT: []
-summary: Get user by user ID
-operationId: my_account
+operationId: delete_user
 produces:
 - application/json
 - application/xml
 responses:
   200:
-    description: Successful operation
+    description: User was deleted with success.
     schema:
-      $ref: '#/definitions/success_get_user'
+      $ref: '#/definitions/success_remove_user'
   400:
     description: Missing or invalid credentials
     schema:
@@ -33,27 +31,10 @@ responses:
       $ref: '#/definitions/error40X'
 
 definitions:
-  success_get_user:
-    type: object
+  success_remove_user:
     properties:
-      id:
+      response:
         type: string
-      name:
-        type: string
-      surname:
-        type: string
-      email:
-        type: string
-      password:
-        type: string
-      modifiedAt:
-        type: string
-        format: date-time
-      obp_authorization:
-        type: string
-        description: Only if the user is associated with obp
-    xml:
-      name: User
 
   error40X:
     properties:

@@ -1,7 +1,8 @@
-Get default receiver bank account
-Return the default receiver bank account previously set by the merchant
+Get receiver bank account by the merchant
+Get the receiver bank account by the merchant
 
 **Authorization is mandatory**
+**Merchant Role is mandatory**
 
 **To get athorization:**
   1 - [Login](https://localhost:5001/apidocs/#!/user/login)
@@ -13,7 +14,7 @@ tags:
 - PISP
 security:
   - JWT: []
-operationId: receiver
+operationId: get_receiver_bank_account
 produces:
 - application/json
 - application/xml

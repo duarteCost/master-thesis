@@ -1,7 +1,8 @@
-Post new permission
-Post new permission in Nearsoft Payment Provider
+Post new role
+Post new role in Nearsoft Payment Provider
 
 **Authorization is mandatory**
+**Admin role is mandatory**
 
 **To get athorization:**
   1 - [Login](https://localhost:5001/apidocs/#!/user/login)

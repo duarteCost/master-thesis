@@ -1,5 +1,5 @@
-Get user account
-Get my Nearsoft Payment Provider Account.
+Delete default payment account
+Delete the default payment account for that user
 
 **Authorization is mandatory**
 
@@ -10,11 +10,10 @@ Get my Nearsoft Payment Provider Account.
   4 - Paste the token into the text input
 ---
 tags:
-- User
+- AISP
 security:
   - JWT: []
-summary: Get user by user ID
-operationId: my_account
+operationId: delete_payment_account
 produces:
 - application/json
 - application/xml
@@ -22,7 +21,7 @@ responses:
   200:
     description: Successful operation
     schema:
-      $ref: '#/definitions/success_get_user'
+      $ref: '#/definitions/success_delete_default_payment_account'
   400:
     description: Missing or invalid credentials
     schema:
@@ -33,27 +32,18 @@ responses:
       $ref: '#/definitions/error40X'
 
 definitions:
-  success_get_user:
-    type: object
+
+  success_delete_default_payment_account:
     properties:
-      id:
+      response:
         type: string
-      name:
+
+  response_get_payment_bank_account_default:
+    properties:
+      bank_id:
         type: string
-      surname:
+      account_id:
         type: string
-      email:
-        type: string
-      password:
-        type: string
-      modifiedAt:
-        type: string
-        format: date-time
-      obp_authorization:
-        type: string
-        description: Only if the user is associated with obp
-    xml:
-      name: User
 
   error40X:
     properties:

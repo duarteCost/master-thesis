@@ -2,7 +2,7 @@ Change user permissions
 Change user permissions in Nearsoft Payment Provider
 
 **Authorization is mandatory**
-**Merchat role is mandatory
+**Admin role is mandatory
 
 **To get athorization:**
   1 - [Login](https://localhost:5001/apidocs/#!/user/login)

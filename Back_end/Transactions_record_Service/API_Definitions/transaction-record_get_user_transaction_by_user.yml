@@ -1,6 +1,5 @@
-Get user account transactions
-This route return all user transaction in one bank account. There are 2 parameters related to the payer, which are the bank_id corresponding to the bank id and account_id
- that corresponds to the account id.
+Get user transaction
+This route return all transaction for one user.
 
 **Authorization is mandatory**
 
@@ -14,24 +13,15 @@ tags:
 - Transactions_record
 security:
   - JWT: []
-operationId: transactions
+operationId: ge_user_transactions
 produces:
 - application/json
 - application/xml
-parameters:
-- in: path
-  name: bank_id
-  description: Id of the paying bank
-  required: true
-- in: path
-  name: account_id
-  description: Id of the paying account
-  required: true
 responses:
   200:
     description: Successful operation
     schema:
-      $ref: '#/definitions/success_transaction'
+      $ref: '#/definitions/success_get_transaction'
   400:
     description: Missing or invalid credentials
     schema:
@@ -43,7 +33,7 @@ responses:
 
 definitions:
 
-  success_transaction:
+  success_get_transaction:
     properties:
       response:
         type: array
@@ -83,13 +73,10 @@ definitions:
       $oid:
         type: string
 
-
   transaction_modified_at:
     properties:
       date:
         type: string
-
-
 
   error40X:
     properties:

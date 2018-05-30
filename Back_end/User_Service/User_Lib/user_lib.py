@@ -1,5 +1,6 @@
 import mongoengine
 import requests
+from bson import ObjectId
 from flask import json
 from pymongo import MongoClient, errors
 from werkzeug.security import generate_password_hash
@@ -64,3 +65,4 @@ def associate_role(token, role, user_id, ROLE_HOST_IP):
     except requests.exceptions.RequestException as err:
         # catastrophic error. bail.
         return str(err)
+

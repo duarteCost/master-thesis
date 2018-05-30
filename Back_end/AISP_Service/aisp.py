@@ -223,7 +223,7 @@ def welcome_ob():
 @app.route('/aisp/payment/bank/account/default', methods=['POST'])
 @Authorization
 @OB_Authorization
-@requires_roles('customer', 'merchant')
+@requires_roles('customer', 'admin')
 @swag_from('API_Definitions/aisp_post_payment_bank_account_default.yml')
 def post_my_default_payment_account(**kwargs):
     payload = kwargs['payload'];  # user id
@@ -269,9 +269,9 @@ def post_my_default_payment_account(**kwargs):
 @app.route('/aisp/payment/bank/account/default', methods=['GET'])
 @Authorization
 @OB_Authorization
-@requires_roles('customer', 'merchant')
+@requires_roles('customer', 'admin')
 @swag_from('API_Definitions/aisp_get_payment_bank_account_default.yml')
-def get_my_default_payment_account(**kwargs):
+def get_default_payment_account(**kwargs):
     user_id = kwargs['payload']
     try:
         payment_account = mongodb_bank_account.find_one({'user_id': ObjectId(user_id)})
@@ -280,7 +280,7 @@ def get_my_default_payment_account(**kwargs):
                             status=400, mimetype='application/json')
         else:
             print(payment_account)
-            app.logger.info('/aisp/payment/bank/account/default: User ' + user_id + ' check default payment account information!')
+            app.logger.info('/aisp/payment/bank/account/default: User ' + user_id + ' check default payment account!')
             return Response(json_util.dumps({"response": {"bank_id" :  payment_account['bank_id'],
                             "account_id" : payment_account['account_id'] }}), status=200, mimetype='application/json')
     except errors.ServerSelectionTimeoutError:
@@ -288,11 +288,30 @@ def get_my_default_payment_account(**kwargs):
                         mimetype='application/json')
 
 
+@app.route('/aisp/payment/bank/account/default', methods=['DELETE'])
+@Authorization
+@OB_Authorization
+@requires_roles('customer', 'admin')
+@swag_from('API_Definitions/aisp_delete_payment_bank_account_default.yml')
+def delete_default_payment_account(**kwargs):
+    user_id = kwargs['payload']
+
+    try:
+        mongodb_bank_account.remove({'user_id': ObjectId(user_id)})
+        app.logger.info('/aisp/payment/bank/account/default: User ' + user_id + ' delete default payment account!')
+        return Response(json_util.dumps({'response': 'Default payment account successful deleted!'}),
+                            status=200, mimetype='application/json')
+
+    except errors.ServerSelectionTimeoutError:
+        return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=404,
+                    mimetype='application/json')
+
+
 # This route gets all accounts in different banks
 @app.route('/aisp/bank/accounts', methods=['GET'])
 @Authorization
 @OB_Authorization
-@requires_roles('customer', 'merchant')
+@requires_roles('customer', 'admin')
 @swag_from('API_Definitions/aisp_get_bank_accounts.yml')
 def get_my_bank_accounts(**kwargs):
     user_id = kwargs['payload']
@@ -318,7 +337,7 @@ def get_my_bank_accounts(**kwargs):
 @app.route('/aisp/payment/bank/accounts', methods=['GET'])
 @Authorization
 @OB_Authorization
-@requires_roles('customer', 'merchant')
+@requires_roles('customer', 'admin')
 @swag_from('API_Definitions/aisp_get_payment_bank_accounts.yml')
 def define_avilable_accounts(**kwargs):
     user_id = kwargs['payload']
@@ -353,7 +372,7 @@ def define_avilable_accounts(**kwargs):
 @app.route('/aisp/bank/<bank_id>/account/<account_id>/transactions', methods=['GET'])
 @Authorization
 @OB_Authorization
-@requires_roles('customer', 'merchant')
+@requires_roles('customer', 'admin')
 @swag_from('API_Definitions/aisp_get_transactions.yml')
 def get_transactions(bank_id, account_id, **kwargs):
     user_id = kwargs['payload']
