@@ -1,0 +1,71 @@
+<!-- To declare your language - read more here: https://www.w3.org/International/questions/qa-html-language-declarations -->
+<head>
+    <title>Nearsoft</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+    <!----------------bootstrap------------------------->
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+    <!----------------end of bootstrap -------------------->
+
+    <link href="..\Css\layout.css" rel="stylesheet" type="text/css" media="all">
+    <link href="..\Css\user-page.css" rel="stylesheet" type="text/css" media="all">
+
+
+    <script src="../JavaScrip/user-page.js"></script>
+    <script src="../JavaScrip/common.js"></script>
+
+
+</head>
+<body id="top">
+<div class="bgded overlay">
+    <div class="wrapper row1" style="background-color:#333; ">
+        <header id="header" class="hoc clear ">
+            <div id="logo" class="fl_left" style="width: 10%; margin: 1% 0 1% 0; ">
+                <h1><a href="index.html"><img src="../Images/logo.png"></a></h1>
+            </div>
+            <nav id="mainav" class="fl_right">
+                <ul class="clear header">
+                    <li class="active"><a style="display: none" id="my_account"  href="user-page.html">Account</a></li>
+                    <li><a class="open-bank" href="open-bank-association.html">PSD2</a></li>
+                    <li><a class="transactions" href="transactions.html">Transactions</a></li>
+                    <li><a href="developer.html">Developer</a></li>
+                    <li><a id="login-state"></a></li>
+                </ul>
+            </nav>
+        </header>
+    </div>
+</div>
+<div id="pageintro">
+        <div class="container">
+            <h5>Hello Duarte</h5>
+            <div class="well">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="removeData">
+                            <p>remove</p>
+                            <button id="remove-user-data">Remove</button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="exportData">
+                            <p>export</p>
+                            <button id="export-user-data">Export</button>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+</div>
+</body>
+</html>
