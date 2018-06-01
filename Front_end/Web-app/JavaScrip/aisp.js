@@ -75,10 +75,10 @@ function list_bank_accounts(accounts) {
 
 $(document).ready(function () {
     $("head").append('<link rel="stylesheet" href="../Css/accounts_box.css">');
-    $("head").append('<link rel="stylesheet" href="../Css/loader.css">');
-    $("head").append('<link rel="stylesheet" href="../Css/confirm_box.css">');
-    $("body").append('<div class="loader_container" style="display: none">');
-    $('.loader_container').append('<div class="loader"></div>');
+    //$("head").append('<link rel="stylesheet" href="../Css/loader.css">');
+    //$("head").append('<link rel="stylesheet" href="../Css/confirm_box.css">');
+    //$("body").append('<div class="loader_container" style="display: none">');
+    //$('.loader_container').append('<div class="loader"></div>');
     play_loader();
     $.support.cors = true;
     if (verify_login()) {

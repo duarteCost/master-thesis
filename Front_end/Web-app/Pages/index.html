@@ -12,8 +12,6 @@ Licence URI: http://www.os-templates.com/template-terms
     <title>Nearsoft</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link href="..\Css\layout.css" rel="stylesheet" type="text/css" media="all">
-    <link href="..\Css\obp_association_aisp.css" rel="stylesheet" type="text/css" media="all">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script src="../JavaScrip/index.js"></script>
     <script src="../JavaScrip/common.js"></script>
@@ -29,6 +27,8 @@ Licence URI: http://www.os-templates.com/template-terms
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
     <!----------------end of bootstrap -------------------->
 
+    <link href="..\Css\layout.css" rel="stylesheet" type="text/css" media="all">
+    <link href="..\Css\obp_association_aisp.css" rel="stylesheet" type="text/css" media="all">
 
 
   </head>
@@ -40,12 +40,12 @@ Licence URI: http://www.os-templates.com/template-terms
             <h1><a href="index.html"><img src="../Images/logo.png"></a></h1>
           </div>
           <nav id="mainav" class="fl_right">
-            <ul class="clear">
-              <li class="active"><a  href="index.html">Home</a></li>
+            <ul class="clear header">
+              <li><a style="display: none" id="my_account"  href="user-page.html">Account</a></li>
               <li><a class="open-bank" href="open-bank-association.html">PSD2</a></li>
               <li><a class="transactions" href="transactions.html">Transactions</a></li>
               <li><a href="developer.html">Developer</a></li>
-              <li><a  id = "login-state"></a></li>
+              <li><a id="login-state"></a></li>
             </ul>
           </nav>
         </header>

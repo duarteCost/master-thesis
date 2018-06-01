@@ -359,9 +359,6 @@ def get_user(**kwargs):
                         mimetype='application/json')
 
 
-
-
-
 #find corrent user
 @app.route('/user/account', methods=['GET'])
 @Authorization
@@ -474,7 +471,7 @@ def obp_delete_user_association(**kwargs):
                         mimetype='application/json')
 
 
-@app.route('/user/<user_id>', methods=['DELETE'])
+@app.route('/user/<user_id>/account', methods=['DELETE'])
 @Authorization
 @requires_roles('admin')
 @swag_from('API_Definitions/delete_user_by_admin.yml')
@@ -487,7 +484,7 @@ def delete_user_by_admin(user_id, **kwargs):
                         mimetype='application/json')
 
 
-@app.route('/user', methods=['DELETE'])
+@app.route('/user/account', methods=['DELETE'])
 @Authorization
 @requires_roles('customer', 'admin')
 @swag_from('API_Definitions/delete_user.yml')

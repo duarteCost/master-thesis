@@ -154,10 +154,16 @@ function verifyLogin() {
 
 
 $(document).ready(function () {
+    $("head").append('<link rel="stylesheet" href="../Css/accounts_box.css">');
+    $("head").append('<link rel="stylesheet" href="../Css/loader.css">');
+    $("head").append('<link rel="stylesheet" href="../Css/confirm_box.css">');
     $("head").append('<link rel="stylesheet" href="../Css/alert_box.css">');
+    $("body").append('<div class="loader_container" style="display: none">');
+    $('.loader_container').append('<div class="loader"></div>');
     if(verifyLogin())
     {
         $('#login-state').html("Logout");
+        $('#my_account').css({"display":"block"});
     }
     else
     {
