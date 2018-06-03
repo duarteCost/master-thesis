@@ -1,4 +1,4 @@
-Get user account transactions
+Get user transactions by bank and Account
 This route return all user transaction in one bank account. There are 2 parameters related to the payer, which are the bank_id corresponding to the bank id and account_id
  that corresponds to the account id.
 
@@ -14,7 +14,7 @@ tags:
 - Transactions_record
 security:
   - JWT: []
-operationId: transactions
+operationId: transactions_by_bank_accounr
 produces:
 - application/json
 - application/xml
@@ -65,6 +65,8 @@ definitions:
       description:
         type: string
       status:
+        type: string
+      merchant:
         type: string
       user_id:
         type: array

@@ -511,7 +511,7 @@ def get_obp_authorization(**kwargs):
                             status=400, mimetype='application/json')
         else:
             if 'obp_authorization' not in user:
-                return Response(json_util.dumps({"obp_authorization" : "NULL"}), status=400,
+                return Response(json_util.dumps({"obp_authorization" : "NULL"}), status=200,
                                 mimetype='application/json')
             else:
                 return Response(json_util.dumps({"obp_authorization" : user['obp_authorization']}), status=200,

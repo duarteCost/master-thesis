@@ -1,9 +1,8 @@
-Get user transaction by admin
-This route return all transaction for one user. User_id is required as path param.
+Get user transactions by Account
+This route return all user transaction in one account. There are 1 parameters related to the payer, which are the bank_id corresponding to account_id
+ that corresponds to the account id.
 
 **Authorization is mandatory**
-**Admin role is mandatory**
-
 
 **To get athorization:**
   1 - [Login](https://localhost:5001/apidocs/#!/user/login)
@@ -15,20 +14,25 @@ tags:
 - Transactions_record
 security:
   - JWT: []
-operationId: get_user_transactions_by_admin
+operationId: transactions_by_account
 produces:
 - application/json
 - application/xml
 parameters:
-- in: path
-  name: user_id
-  description: Id of the paying bank
-  required: true
+- in: formData
+  name: account_id
+  description: Id of the paying account
+- in: formData
+  name: begin_date
+  description: Begin date
+- in: formData
+  name: end_date
+  description: End date
 responses:
   200:
     description: Successful operation
     schema:
-      $ref: '#/definitions/success_get_transaction'
+      $ref: '#/definitions/success_transaction'
   400:
     description: Missing or invalid credentials
     schema:
@@ -40,7 +44,7 @@ responses:
 
 definitions:
 
-  success_get_transaction:
+  success_transaction:
     properties:
       response:
         type: array

@@ -24,19 +24,18 @@ $(document).ready(function () {
             },
             success: function (data) {
                 stop_loader();
-                location.replace('aisp.html');
+                if(data.obp_authorization === "NULL") {
+                    $('#associate_ob_account').css({"display": "block"});
+                } else {
+                    location.replace('aisp.html');
+                }
             },
             error: function (data) {
                 stop_loader();
                 console.log(data);
                 if (data.responseJSON != undefined) {
-                    if (data.responseJSON.obp_authorization === "NULL") {
-                        $('#associate_ob_account').css({"display": "block"});
-                    }
-                    else {
-                        alert(data.responseJSON.response);
-                        location.replace('index.html')
-                    }
+                    alert(data.responseJSON.response);
+                    location.replace('index.html');
                 }
                 else {
                     //alert("Our server is unavailable. Try access later!");

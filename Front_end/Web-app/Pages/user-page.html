@@ -18,10 +18,10 @@
 
     <link href="..\Css\layout.css" rel="stylesheet" type="text/css" media="all">
     <link href="..\Css\user-page.css" rel="stylesheet" type="text/css" media="all">
+    <link href="..\Css\account_transactions.css" rel="stylesheet" type="text/css" media="all">
 
-
-    <script src="../JavaScrip/user-page.js"></script>
     <script src="../JavaScrip/common.js"></script>
+    <script src="../JavaScrip/user-page.js"></script>
 
 
 </head>
@@ -30,13 +30,12 @@
     <div class="wrapper row1" style="background-color:#333; ">
         <header id="header" class="hoc clear ">
             <div id="logo" class="fl_left" style="width: 10%; margin: 1% 0 1% 0; ">
-                <h1><a href="index.html"><img src="../Images/logo.png"></a></h1>
+                <h1><a href="user-page.html"><img src="../Images/logo.png"></a></h1>
             </div>
             <nav id="mainav" class="fl_right">
                 <ul class="clear header">
                     <li class="active"><a style="display: none" id="my_account"  href="user-page.html">Account</a></li>
                     <li><a class="open-bank" href="open-bank-association.html">PSD2</a></li>
-                    <li><a class="transactions" href="transactions.html">Transactions</a></li>
                     <li><a href="developer.html">Developer</a></li>
                     <li><a id="login-state"></a></li>
                 </ul>
@@ -44,28 +43,62 @@
         </header>
     </div>
 </div>
-<div id="pageintro">
-        <div class="container">
-            <h5>Hello Duarte</h5>
-            <div class="well">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="removeData">
-                            <p>remove</p>
-                            <button id="remove-user-data">Remove</button>
-                        </div>
+    <div class="content">
+        <div class="col-md-9" id="transactions">
+            <div class= "transaction" id="transactions_header">
+                <div  class="description">
+                    <p><b>Description</b></p>
+                </div>
+                <div   class="amount">
+                    <p><b>Amount</b></p>
+                </div>
+                <div   class="status">
+                    <p><b>Status</b></p>
+                </div>
+                <div   class="merchant">
+                    <p><b>Merchant</b></p>
+                </div>
+                <div   class="date">
+                    <p><b>Date</b></p>
+                </div>
+                <hr style="background-color: #333; height: 1.5px">
+            </div>
+            <div class="transaction" id="transactions_body"></div>
+        </div>
+        <div class="col-md-3">
+            <div class="right-side-bar">
+                <div class="right_bar_element">
+                    <p class="title">Search</p>
+                    <div class="form-group">
+                        <label for="account_id_id">Account</label>
+                        <select class="form-control" name="account_id" id="account_id_id">
+                            <option></option>
+                        </select>
                     </div>
-                    <div class="col-md-6">
-                        <div class="exportData">
-                            <p>export</p>
-                            <button id="export-user-data">Export</button>
-
-                        </div>
+                    <div class="form-group">
+                        <label for="begin_date_id">Begin date of the interval</label>
+                        <input class="form-control" type="date" name="begin_date" id="begin_date_id">
+                    </div>
+                    <div class="form-group">
+                        <label for="end_date_id">End date of the interval</label>
+                        <input class="form-control" type="date" name="end_date" id="end_date_id">
                     </div>
                 </div>
-            </div>
 
+                <div class="right_bar_element">
+                    <p class="title">GDPR</p>
+                    <div class="removeData">
+                        <p>According with Art. 17 GDPR Right to erasure (‘right to be forgotten’)</p>
+                        <p class="center"><button class="btn" id="remove-user-data">Remove</button></p>
+                    </div>
+                    <div class="exportData">
+                        <p>According with Art. 20 GDPR Right to data portability</p>
+                        <p class="center"><button class="btn" id="export-user-data">Export</button></p>
+                    </div>
+                </div>
+            <div>
         </div>
-</div>
+
+    </div>
 </body>
 </html>

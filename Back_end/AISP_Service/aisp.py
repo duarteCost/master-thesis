@@ -332,7 +332,6 @@ def get_my_bank_accounts(**kwargs):
 
 
 
-# ob routes, this routes correspond to the payment using PSD2
 # This route return accounts with amount enough to the transaction
 @app.route('/aisp/payment/bank/accounts', methods=['GET'])
 @Authorization

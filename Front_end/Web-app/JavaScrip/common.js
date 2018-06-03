@@ -150,9 +150,6 @@ function verifyLogin() {
 }
 
 
-
-
-
 $(document).ready(function () {
     $("head").append('<link rel="stylesheet" href="../Css/accounts_box.css">');
     $("head").append('<link rel="stylesheet" href="../Css/loader.css">');
@@ -174,12 +171,8 @@ $(document).ready(function () {
         if(verifyLogin()){
             setCookie("token", "", 0.5);
             $('#login-state').html("Login");
-            location.replace('index.html');
         }
-        else
-        {
-            location.replace('user-login.html');
-        }
+        location.replace('user-login.html');
     });
 
 

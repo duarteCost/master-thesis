@@ -1,8 +1,6 @@
 #transactions{
-    width: 80%;
     height: auto;
     color: #333;
-    margin: 5% 10% 0 10%;
 }
 
 .transaction{
@@ -12,22 +10,27 @@
 
 
 .transaction .description{
-    width: 53%;
+    width: 47%;
     float: left;
     margin-left: 2%;
 }
 .transaction .amount{
-    width: 13%;
+    width: 10%;
     float: left;
     margin-left: 2%;
 }
 .transaction .status{
-    width: 13%;
+    width: 10%;
+    float: left;
+    margin-left: 2%;
+}
+.transaction .merchant{
+    width: 10%;
     float: left;
     margin-left: 2%;
 }
 .transaction .date{
-    width: 13%;
+    width: 10%;
     float: left;
     margin-left: 2%;
 }

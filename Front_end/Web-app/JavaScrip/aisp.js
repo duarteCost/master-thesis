@@ -74,11 +74,6 @@ function list_bank_accounts(accounts) {
 }
 
 $(document).ready(function () {
-    $("head").append('<link rel="stylesheet" href="../Css/accounts_box.css">');
-    //$("head").append('<link rel="stylesheet" href="../Css/loader.css">');
-    //$("head").append('<link rel="stylesheet" href="../Css/confirm_box.css">');
-    //$("body").append('<div class="loader_container" style="display: none">');
-    //$('.loader_container').append('<div class="loader"></div>');
     play_loader();
     $.support.cors = true;
     if (verify_login()) {
@@ -88,7 +83,7 @@ $(document).ready(function () {
         $('.user_settings').append("<p><label>If you wish to remove the association in OBP you can do so by clicking on the following button.</label></p>");
         $('.user_settings').append("<br>");
         $('.user_settings').append("<br>");
-        $('.user_settings').append("<button type='submit' class='btn remove_obp_association' type='button'><p>Remove <br>association</p></button>");
+        $('.user_settings').append("<p class='center'><button type='submit' class='btn remove_obp_association' type='button'><p>Remove</p></button></p>");
         $.ajax({
             method: "GET",
             url: "https://127.0.0.1:5003/aisp/payment/bank/account/default",

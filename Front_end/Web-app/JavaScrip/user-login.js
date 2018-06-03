@@ -20,6 +20,17 @@ function getCookie(cname) {
     return "";
 }
 
+function  verify_obp_auth() {
+    return $.ajax({
+        url: "https://127.0.0.1:5001/user/account/obp/authorization",
+        method: "GET",
+        data: true,
+        beforeSend: function (xhr) {
+            /* Authorization header */
+            xhr.setRequestHeader("Authorization", getCookie("token"));
+        }
+    });
+}
 
 
 $(document).ready(function(){
@@ -32,11 +43,16 @@ $(document).ready(function(){
             url: "https://127.0.0.1:5001/user/login",
             data: $(this).serializeArray(),
             success: function (data) {
-                console.log('Submission was successful.');
-                console.log(data);
                 setCookie("token", data.token, 0.5);
-                console.log(getCookie("token"));
-                location.replace('index.html');
+                verify_obp_auth(getCookie('token')).done(function (data) {
+                    if (data.obp_authorization === "NULL") {
+                        location.replace('index.html');
+                    } else {
+                        location.replace('user-page.html');
+                    }
+                }).fail(function () {
+                    Alert("Error", "Login fail.");
+                })
             },
             error: function (data) {
                 $('#error-message').html('O email e/ou password introduzidos estão incorrectos.');

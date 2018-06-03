@@ -44,6 +44,10 @@ parameters:
   name: status
   description: Transaction description
   required: true
+- in: formData
+  name: merchant
+  description: Merchant name
+  required: true
 responses:
   200:
     description: Successful operation

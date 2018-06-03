@@ -1,5 +1,7 @@
 import os
 import time
+
+import dateutil
 import mongoengine
 import pymongo
 import requests
@@ -183,18 +185,22 @@ def post_transaction(bank_id, account_id, **kwargs):
         return Response(json_util.dumps({'response': 'Missing parameter: description'}), status=400,
                         mimetype='application/json')
     elif 'status' not in request_params:
-        return Response(json_util.dumps({'response': 'Missing parameter: description'}), status=400,
+        return Response(json_util.dumps({'response': 'Missing parameter: status'}), status=400,
+                        mimetype='application/json')
+    elif 'merchant' not in request_params:
+        return Response(json_util.dumps({'response': 'Missing parameter: merchant'}), status=400,
                         mimetype='application/json')
 
     amount = request_params['amount']
     currency = request_params['currency']
     description = request_params['description']
     status = request_params['status']
+    merchant = request_params['merchant']
 
     try:
         mongoengine.connect(db='Transactions_db', host='localhost', port=27017, username = USERNAME, password = PASSWORD,
                         authentication_source=AUTHSOURCE, authentication_mechanism='SCRAM-SHA-1')
-        Transaction(ObjectId(), bank_id, account_id, float(amount), currency, description, status, ObjectId(payload)).save()
+        Transaction(ObjectId(), bank_id, account_id, float(amount), currency, description, status, ObjectId(payload), merchant).save()
 
         return Response(json_util.dumps({'response': 'Transaction record added successfully.'}),
                         status=200, mimetype='application/json')
@@ -210,7 +216,7 @@ def post_transaction(bank_id, account_id, **kwargs):
 @app.route('/transactions_record/bank/<bank_id>/account/<account_id>/transactions', methods=['GET'])
 @Authorization
 @requires_roles('customer', 'admin')
-@swag_from('API_Definitions/transaction-record_get_user_transaction.yml')
+@swag_from('API_Definitions/transaction-record_get_user_transaction_by_bank_account.yml')
 def get_user_transactions(bank_id, account_id, **kwargs):
     user_id = kwargs['payload']
     try:
@@ -220,6 +226,45 @@ def get_user_transactions(bank_id, account_id, **kwargs):
                             status=400, mimetype='application/json')
         else:
             return Response(json_util.dumps({"response": user_transactions}), status=200, mimetype='application/json')
+    except errors.ServerSelectionTimeoutError:
+        return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=404,
+                        mimetype='application/json')
+
+# Get bank account transaction
+@app.route('/transactions_record/search', methods=['POST'])
+@Authorization
+@requires_roles('customer', 'admin')
+@swag_from('API_Definitions/transaction-record_get_user_transaction_by_search.yml')
+def get_user_transactions_by_account(**kwargs):
+    user_id = kwargs['payload']
+    query = {'user_id': ObjectId(user_id)};
+    td = {}
+
+    request_params = request.form
+    if 'account_id' in request_params and request_params['account_id']!='':
+        query['account_id'] = request_params['account_id']
+
+    if 'begin_date' in request_params and request_params['begin_date']!='':
+        transaction_begin_date = dateutil.parser.parse(request_params['begin_date'])
+        td["$gte"] = transaction_begin_date
+
+    if 'end_date' in request_params and request_params['end_date']!='':
+        transaction_end_date = dateutil.parser.parse(request_params['end_date'])
+        td["$lt"] = transaction_end_date
+
+    if "$gte" in td or "$lt" in td:
+        query['modifiedAt'] = td
+
+    print(query)
+
+    try:
+        user_transactions = mongodb_transactions.find(query).sort("modifiedAt", -1)
+        if user_transactions is None:
+            return Response(json_util.dumps({'response': 'No transactions has been found for that user'}),
+                            status=400, mimetype='application/json')
+        else:
+            return Response(json_util.dumps({"response": user_transactions}), status=200,
+                            mimetype='application/json')
     except errors.ServerSelectionTimeoutError:
         return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=404,
                         mimetype='application/json')

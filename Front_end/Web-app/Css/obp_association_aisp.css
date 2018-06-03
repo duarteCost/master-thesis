@@ -58,11 +58,9 @@ body{
 }
 
 .user_settings .remove_obp_association{
-    width: 60%;
     text-align: center;
-    margin-left:20%;
     font-size: 13px;
-    padding: 1% 1% 1% 1%;
+    padding: 5% 4% 1% 4%;
 }
 
 #show-default-payment-account ul{

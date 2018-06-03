@@ -191,11 +191,11 @@ def get_receiver_account_method():
         return 'Mongodb is not running'
 
 
-def save_transaction_record(bank_id, account_id, OUR_VALUE, OUR_CURRENCY, description, status, token):
+def save_transaction_record(bank_id, account_id, OUR_VALUE, OUR_CURRENCY, description, status, token, merchant):
     # save transaction record on Transaction record micro service
     try:
         transaction_data = {'amount': OUR_VALUE, 'currency': OUR_CURRENCY, 'description': description,
-                            'status': status};
+                            'status': status, 'merchant':merchant};
         requests.post(
             'https://' + TRANSACTION_RECORD_HOST_IP + ':5004/transactions_record/bank/' + bank_id + '/account/' + account_id + '/transactions',
             headers={'Authorization': token}, data=transaction_data,
@@ -287,7 +287,6 @@ def payment_initialization(bank_id, account_id,**kwargs):
     token = kwargs['token']
     set_baseurl_apiversion()
     request_params = request.form
-    print(request_params)
     if 'currency' not in request_params:
         return Response(json_util.dumps({'response': 'Missing parameter: currency'}), status=400,
                         mimetype='application/json')
@@ -331,7 +330,9 @@ def payment_initialization(bank_id, account_id,**kwargs):
         return Response(json_util.dumps({'response': 'Got an error: ' + str(initiate_transaction_response)}), status=400,
                         mimetype='application/json')
     else:
-        save_transaction_record(bank_id, account_id, OUR_VALUE, OUR_CURRENCY, description, initiate_transaction_response['status'], token)
+
+        merchant = "Umazon";
+        save_transaction_record(bank_id, account_id, OUR_VALUE, OUR_CURRENCY, description, initiate_transaction_response['status'], token, merchant)
         app.logger.info('/pisp/bank/<bank_id>/account/<account_id>/initiate-transaction-request: User ' + user_id + ' '
          'initiate a transaction request on BANK_ID=' + bank_id + ' and ACCOUNT_ID=' + account_id + '! '
                     'Transaction od is '+initiate_transaction_response['id']['value']+'!')
@@ -374,9 +375,9 @@ def payment_answer_challenge(bank_id, account_id,**kwargs):
     OUR_CURRENCY = challenge_response['details']['value']['currency']
     description = challenge_response['details']['description']
     status = challenge_response['status']
-    print("Transaction status: {0}".format(challenge_response))
+    merchant = "Umazon";
     save_transaction_record(bank_id, account_id, OUR_VALUE, OUR_CURRENCY, description,
-                            status, token)
+                            status, token, merchant)
     app.logger.info('/pisp/bank/<bank_id>/account/<account_id>/answer-challenge: User ' + user_id + ' '
                                 'answer challenge of transaction '+transaction_req_id+'!')
     return Response(json_util.dumps({'response': challenge_response}), status=200,

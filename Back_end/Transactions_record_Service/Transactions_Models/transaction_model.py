@@ -12,9 +12,10 @@ class Transaction(Document):
     description= StringField(max_length=500, required=True)
     status= StringField(max_length=500, required=True)
     user_id = ObjectIdField(max_length=200, required=True)
+    merchant = StringField(max_length=200, required=True)
     modifiedAt = DateTimeField(default=datetime.datetime.now())
 
-    def __init__(self, transaction_id, bank_id, account_id, amount, currency, description, status, user_id, *args, **values):
+    def __init__(self, transaction_id, bank_id, account_id, amount, currency, description, status, user_id, merchant, *args, **values):
         super().__init__(*args, **values)
         self.id = transaction_id
         self.bank_id = bank_id
@@ -24,4 +25,5 @@ class Transaction(Document):
         self.description = description
         self.status = status
         self.user_id = user_id
+        self.merchant = merchant
         self.modifiedAt = datetime.datetime.now()

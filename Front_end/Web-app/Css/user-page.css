@@ -1,3 +1,50 @@
 body {
     background-color: white;
 }
+
+.content{
+    margin: 5% 5% 5% 5%;
+}
+
+.right_bar_element{
+    padding: 5% 5% 5% 5%;
+    margin-top: 5%;
+    border: 1px solid #333;
+}
+
+.right-side-bar{
+    height: auto;
+    width: 100%;
+    color: #333;
+    margin-bottom: 10%;
+}
+
+.removeData{
+    margin-top: 5%;
+}
+
+.exportData{
+    margin-top: 10%;
+}
+
+.title{
+    text-align: center;
+    font-size: 2em;
+}
+
+.btn{
+    padding: 2% 2% 2% 2%;
+    background-color:#333;
+    border-color: black;
+    color: #FAFAFA;
+}
+
+.btn:hover {
+    background-color: rgb(222, 69, 30);
+    color: white;
+}
+
+
+#transactions_body p{
+    font-weight: normal;
+}
