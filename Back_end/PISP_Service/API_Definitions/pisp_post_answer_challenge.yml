@@ -41,6 +41,10 @@ parameters:
   name: transaction_req_id
   description: Transaction request ID of Initiated transaction
   required: true
+- in: query
+  name: merchantKey
+  description: Merchant identifier
+  required: true
 responses:
   200:
     description: Successful operation

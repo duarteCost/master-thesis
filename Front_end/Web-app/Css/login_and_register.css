@@ -69,3 +69,13 @@ a:hover{
     color: rgb(222,69,30);
     font-weight: bold;
 }
+
+.input-w label, .input-w input {
+    float: none;
+    display: inline-block;
+    line-height: 200px;
+}
+
+.input-w input {
+    margin-top: -0.5%;
+}

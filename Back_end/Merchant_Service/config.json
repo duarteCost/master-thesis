@@ -3,8 +3,7 @@
     "AUTH_HOST_IP": "localhost",
     "USER_HOST_IP": "localhost",
     "ROLE_HOST_IP": "localhost",
-    "TRANSACTION_RECORD_HOST_IP": "localhost",
-    "MERCHANT_HOST_IP": "localhost"
+    "TRANSACTION_RECORD_HOST_IP": "localhost"
   },
 
   "OB": {

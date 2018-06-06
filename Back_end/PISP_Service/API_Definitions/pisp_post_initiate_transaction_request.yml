@@ -44,6 +44,10 @@ parameters:
   name: description
   description: Description
   required: true
+- in: query
+  name: merchantKey
+  description: Merchant identifier
+  required: true
 responses:
   200:
     description: Successful operation

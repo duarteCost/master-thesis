@@ -1,0 +1,82 @@
+Get receiver bank account
+Get the receiver bank account
+
+**Authorization is mandatory**
+
+**To get athorization:**
+  1 - [Login](https://localhost:5001/apidocs/#!/user/login)
+  2 - Copy token from response
+  3 - Click on authorize on this page
+  4 - Paste the token into the text input
+---
+tags:
+- Merchant
+security:
+  - JWT: []
+operationId: get_receiver_bank_account
+produces:
+- application/json
+- application/xml
+parameters:
+- in: path
+  name: key
+  description: Merchant key
+  required: true
+responses:
+  200:
+    description: Successful operation
+    schema:
+      $ref: '#/definitions/success_get_receiver_account'
+  400:
+    description: Missing or invalid credentials
+    schema:
+      $ref: '#/definitions/error40X'
+  404:
+    description: Bad request
+    schema:
+      $ref: '#/definitions/error40X'
+
+definitions:
+
+  success_get_receiver_account:
+    properties:
+      response:
+        type: array
+        $ref: '#/definitions/response_get_merchant_account'
+
+  response_get_merchant_account:
+    properties:
+      _id:
+        type: array
+        $ref: '#/definitions/_id'
+      brand:
+        type: string
+      email:
+        type: email
+      phone:
+        type: string
+      key:
+        type: string
+      user_id:
+        type: array
+        $ref: '#/definitions/_id'
+      receiver_account:
+        type: array
+        $ref: '#/definitions/receiver_account'
+
+  _id:
+    properties:
+      $oid:
+        type: string
+
+  receiver_account:
+    properties:
+      account_id:
+        type: string
+      bank_id:
+        type: string
+
+  error40X:
+    properties:
+      response:
+        type: string

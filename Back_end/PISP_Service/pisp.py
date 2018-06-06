@@ -12,7 +12,6 @@ from flasgger import swag_from
 from flasgger import Swagger
 import logging
 from logging.handlers import RotatingFileHandler
-from PISP_Models.PISP_receiver_account import Bank_account
 import PISP_Lib.obp
 obp = PISP_Lib.obp
 
@@ -24,30 +23,19 @@ AUTH_HOST_IP = config['DEFAULT']['AUTH_HOST_IP']
 USER_HOST_IP = config['DEFAULT']['USER_HOST_IP']
 ROLE_HOST_IP = config['DEFAULT']['ROLE_HOST_IP']
 TRANSACTION_RECORD_HOST_IP = config['DEFAULT']['TRANSACTION_RECORD_HOST_IP']
+MERCHANT_HOST_IP = config['DEFAULT']['MERCHANT_HOST_IP']
 OB_API_HOST = config['OB']['OB_API_HOST']
 API_VERSION = config['OB']['API_VERSION']
 USERNAME = config['DB']['USERNAME']
 PASSWORD = config['DB']['PASSWORD']
 AUTHSOURCE = config['DB']['AUTHSOURCE']
 
-client = MongoClient('localhost',
-                      username=USERNAME,
-                      password=PASSWORD,
-                      authSource=AUTHSOURCE,
-                      authMechanism='SCRAM-SHA-1')
-
-mongodb = client.Pisp_receiver_account_db.bank_account
-time.sleep(5)
-
 context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
-
-
 
 # decorator's
 def Authorization(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
-        print("autho")
         token = request.headers.get('Authorization')
 
         try:
@@ -97,7 +85,6 @@ def requires_roles(*roles):
                     print(user_roles)
                     user_roles = user_roles['roles']
                     for user_role in user_roles:  # Verify if user have a specific role
-                        print(user_role)
                         if user_role in roles:
                             error = False
                             break
@@ -105,7 +92,6 @@ def requires_roles(*roles):
                     print('No roles found for that user!')
                 else:
                     print('Mongodb is not running')
-                print(roles)
 
             except requests.exceptions.Timeout:
                 # Maybe set up for a retry, or continue in a retry loop
@@ -129,10 +115,6 @@ def requires_roles(*roles):
             return f(*args, **kwargs)
         return wrapped
     return wrapper
-
-
-
-
 
 def OB_Authorization(f):
     @wraps(f)
@@ -180,15 +162,25 @@ def set_baseurl_apiversion():
     obp.setApiVersion(API_VERSION)
 
 
-def get_receiver_account_method():
+def get_merchant(key, token):
     try:
-        payment_account = mongodb.find_one({})
-        if payment_account is None:
-            return  'No one destination payment bank account has been found'
-        else:
-            return {'account_data':payment_account}
-    except errors.ServerSelectionTimeoutError:
-        return 'Mongodb is not running'
+        merchant_bytes = requests.get('https://' + MERCHANT_HOST_IP + ':5006/merchant/account/'+ key ,
+                                      headers={'Authorization': token},
+                                      verify=False).content
+    except requests.exceptions.Timeout:
+        # Maybe set up for a retry, or continue in a retry loop
+        return Response(json_util.dumps({'response': 'Merchant micro service timeout.'}), status=404,
+                        mimetype='application/json')
+    except requests.exceptions.TooManyRedirects:
+        # Tell the user their URL was bad and try a different one
+        return Response(json_util.dumps({'response': 'Impossible to find url of Merchant micro service.'}), status=404,
+                        mimetype='application/json')
+    except requests.exceptions.RequestException as err:
+        # catastrophic error. bail.
+        return Response(json_util.dumps({'response': str(err)}), status=404,
+                        mimetype='application/json')
+
+    return merchant_bytes.decode("utf-8")
 
 
 def save_transaction_record(bank_id, account_id, OUR_VALUE, OUR_CURRENCY, description, status, token, merchant):
@@ -250,13 +242,8 @@ def welcome_ob():
     return Response(json_util.dumps({'response': 'Welcome PISP Service'}), status=200,
                     mimetype='application/json')
 
-
-
-
-
 # ob routes, this routes correspond to the payment using PSD2
-
-#This route gets the transaction fee
+# This route gets the transaction fee
 @app.route('/pisp/bank/<bank_id>/account/<account_id>/charge', methods=['GET'])
 @Authorization
 @OB_Authorization
@@ -274,8 +261,6 @@ def get_charge(bank_id, account_id,**kwargs):
                     mimetype='application/json')
 
 
-
-
 # Initialize payment, as a result, the transaction may or may not be completed
 @app.route('/pisp/bank/<bank_id>/account/<account_id>/initiate-transaction-request', methods=['POST'])
 @Authorization
@@ -286,6 +271,8 @@ def payment_initialization(bank_id, account_id,**kwargs):
     user_id = kwargs['payload'];  # user id
     token = kwargs['token']
     set_baseurl_apiversion()
+    merchant_key = request.args.get('merchantKey')
+
     request_params = request.form
     if 'currency' not in request_params:
         return Response(json_util.dumps({'response': 'Missing parameter: currency'}), status=400,
@@ -300,26 +287,24 @@ def payment_initialization(bank_id, account_id,**kwargs):
     else:
         description = request_params['description']
 
-
-    # merchant bank details
-    receiver_account_response = get_receiver_account_method()
-    if "account_data" not in receiver_account_response:
+    merchant = get_merchant(merchant_key, token)
+    merchant_json = json.loads(merchant)
+    print(merchant_json)
+    merchant_json = merchant_json['response'][0]
+    print(merchant_json);
+    if 'receiver_account' not in merchant_json:
         return Response(json_util.dumps({'response': 'No one receiver payment bank account has been found'}),
                         status=400, mimetype='application/json')
 
-    receiver_account = receiver_account_response['account_data']
-    cp_bank = receiver_account['bank_id']
-    cp_account = receiver_account['account_id']
-
+    cp_bank = merchant_json['receiver_account']['bank_id']
+    cp_account = merchant_json['receiver_account']['account_id']
 
     OUR_CURRENCY = request_params['currency']
     OUR_VALUE = request_params['amount']
     obp.setPaymentDetails(OUR_CURRENCY, OUR_VALUE)
 
-
     dl_token = kwargs['user_ob_token'] #Get the user authorization given by the open bank
     set_baseurl_apiversion() #Fill the API url and version with config file data
-
 
     challenge_types = obp.getChallengeTypes(bank_id, account_id, dl_token) #use default sandbox_tan
     challenge_type = challenge_types[0]['type']#only exists the first
@@ -330,9 +315,8 @@ def payment_initialization(bank_id, account_id,**kwargs):
         return Response(json_util.dumps({'response': 'Got an error: ' + str(initiate_transaction_response)}), status=400,
                         mimetype='application/json')
     else:
-
-        merchant = "Umazon";
-        save_transaction_record(bank_id, account_id, OUR_VALUE, OUR_CURRENCY, description, initiate_transaction_response['status'], token, merchant)
+        merchant_brand = merchant_json['brand'];
+        save_transaction_record(bank_id, account_id, OUR_VALUE, OUR_CURRENCY, description, initiate_transaction_response['status'], token, merchant_brand)
         app.logger.info('/pisp/bank/<bank_id>/account/<account_id>/initiate-transaction-request: User ' + user_id + ' '
          'initiate a transaction request on BANK_ID=' + bank_id + ' and ACCOUNT_ID=' + account_id + '! '
                     'Transaction od is '+initiate_transaction_response['id']['value']+'!')
@@ -351,6 +335,8 @@ def payment_answer_challenge(bank_id, account_id,**kwargs):
     token = kwargs['token']
     set_baseurl_apiversion()
     request_params = request.form
+    merchant_key = request.args.get('merchantKey')
+    print(merchant_key)
     print(request_params) #body of route
     if 'transaction_req_id' not in request_params:
         return Response(json_util.dumps({'response': 'Missing parameter: transaction_req_id'}), status=400,
@@ -375,93 +361,18 @@ def payment_answer_challenge(bank_id, account_id,**kwargs):
     OUR_CURRENCY = challenge_response['details']['value']['currency']
     description = challenge_response['details']['description']
     status = challenge_response['status']
-    merchant = "Umazon";
+
+    merchant = get_merchant(merchant_key, token)
+    merchant_json = json.loads(merchant);
+    merchantJson = merchant_json['response'][0]
+    merchant_brand = merchantJson['brand'];
     save_transaction_record(bank_id, account_id, OUR_VALUE, OUR_CURRENCY, description,
-                            status, token, merchant)
+                            status, token, merchant_brand)
     app.logger.info('/pisp/bank/<bank_id>/account/<account_id>/answer-challenge: User ' + user_id + ' '
                                 'answer challenge of transaction '+transaction_req_id+'!')
     return Response(json_util.dumps({'response': challenge_response}), status=200,
                     mimetype='application/json')
-# end of payment routs
-
-
-# Payment receiver account
-@app.route('/pisp/receiver/bank/account', methods=['POST'])
-@Authorization
-@requires_roles('merchant')
-@swag_from('API_Definitions/pisp_post_receiver_bank_account.yml')
-def post_receiver_account(**kwargs):
-    user_id = kwargs['payload'];  # user id
-    request_params = request.form
-    print(request_params)
-    if 'bank_id' not in request_params:
-        return Response(json_util.dumps({'response': 'Missing parameter: username'}), status=400,
-                        mimetype='application/json')
-    elif 'account_id' not in request_params:
-        return Response(json_util.dumps({'response': 'Missing parameter: password'}), status=400,
-                        mimetype='application/json')
-
-    bank_id = request_params['bank_id']
-    account_id = request_params['account_id']
-
-    try:
-        print(mongodb)
-        payment_account = mongodb.find_one({})
-        print(payment_account)
-        if payment_account is None:
-            mongoengine.connect(db='Pisp_receiver_account_db', host='localhost', port=27017, username = USERNAME, password = PASSWORD,
-                            authentication_source=AUTHSOURCE, authentication_mechanism='SCRAM-SHA-1')
-            Bank_account(ObjectId(), bank_id, account_id).save()
-            app.logger.info('/pisp/receiver/bank/account: User ' + user_id + ' define the receiver payment account!')
-            return Response(json_util.dumps({'response': 'Successful definition your receiver bank account.'}),
-                            status=200, mimetype='application/json')
-        else:
-            mongodb.find_one_and_update({}, {'$set': {'bank_id': bank_id, 'account_id': account_id}})
-            app.logger.info('/pisp/receiver/bank/account: User ' + user_id + ' update the receiver payment account!')
-            return Response(json_util.dumps({'response': 'Successful update of your receiver bank account.'}),
-                            status=200, mimetype='application/json')
-    except (errors.DuplicateKeyError, mongoengine.errors.NotUniqueError):
-        return Response(json_util.dumps({'response': 'A user can only have one receiver bank account.'}),
-                        status=400, mimetype='application/json')
-    except errors.ServerSelectionTimeoutError:
-        return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=404,
-                        mimetype='application/json')
-
-
-@app.route('/pisp/receiver/bank/account', methods=['GET'])
-@Authorization
-@requires_roles('merchant')
-@swag_from('API_Definitions/pisp_get_receiver_bank_account.yml')
-def get_receiver_account(**kwargs):
-    user_id = kwargs['payload'];  # user id
-    receiver_account_response = get_receiver_account_method()
-    if 'Mongodb is not running' in receiver_account_response:
-        return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=404,
-                 mimetype='application/json')
-    elif 'account_data' in receiver_account_response:
-        receiver_account = receiver_account_response['account_data']
-        app.logger.info('/pisp/receiver/bank/account: User ' + user_id + ' get the receiver payment account!')
-        return Response(json_util.dumps({"response": {"bank_id": receiver_account['bank_id'],
-                                                      "account_id": receiver_account['account_id']}}), status=200,
-                        mimetype='application/json')
-    else:
-        return Response(json_util.dumps({'response': 'No one receiver bank account has been found'}),
-                        status=400, mimetype='application/json')
-
-@app.route('/pisp/receiver/bank/account', methods=['DELETE'])
-@Authorization
-@requires_roles('merchant')
-@swag_from('API_Definitions/pisp_delete_receiver_bank_account.yml')
-def delete_receiver_account(**kwargs):
-    user_id = kwargs['payload'];
-    try:
-        mongodb.remove({})
-        app.logger.info('/pisp/receiver/bank/account: User ' + user_id + ' delete the receiver payment account!')
-        return Response(json_util.dumps({"response": "Receiver bank account successfully deleted."}), status=200,
-                        mimetype='application/json')
-    except errors.ServerSelectionTimeoutError:
-        return Response(json_util.dumps({'response': 'Mongodb is not running'}), status=404,
-                        mimetype='application/json')
+# end of payment routes
 
 
 if __name__ == '__main__':

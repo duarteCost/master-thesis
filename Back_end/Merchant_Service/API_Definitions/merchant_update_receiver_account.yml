@@ -1,5 +1,6 @@
-Delete receiver bank account by merchant
-Delete receiver bank account by merchant
+Update merchant receiver accont
+With this route the merchant can update the receiver payment account
+There are  2  parameters related to the receiver account, which are the bank_id and the account_id.
 
 **Authorization is mandatory**
 **Merchant Role is mandatory**
@@ -11,18 +12,27 @@ Delete receiver bank account by merchant
   4 - Paste the token into the text input
 ---
 tags:
-- PISP
+- Merchant
 security:
   - JWT: []
-operationId: delete_receiver_bank_account
+operationId: update_merchant_receiver_account
 produces:
 - application/json
 - application/xml
+parameters:
+- in: formData
+  name: account_id
+  description: Payment receiver account id
+  required: true
+- in: formData
+  name: bank_id
+  description: Payment bank id
+  required: true
 responses:
   200:
     description: Successful operation
     schema:
-      $ref: '#/definitions/success_delete_receiver_account'
+      $ref: '#/definitions/success_update_merchant_receiver_account'
   400:
     description: Missing or invalid credentials
     schema:
@@ -33,8 +43,7 @@ responses:
       $ref: '#/definitions/error40X'
 
 definitions:
-
-  success_delete_receiver_account:
+  success_update_merchant_receiver_account:
     properties:
       response:
         type: string
