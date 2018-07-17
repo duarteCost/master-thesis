@@ -257,7 +257,7 @@ def create_role(**kwargs):
                         mimetype='application/json')
 
 
-@app.route('/role/<role_name>/role/user/<user_id>', methods=['POST'])
+@app.route('/role/<role_name>/user/<user_id>', methods=['POST'])
 @Authorization
 @requires_roles('admin')
 @swag_from('API_Definitions/role_post_user_permissions.yml')

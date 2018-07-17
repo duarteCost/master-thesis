@@ -50,7 +50,8 @@ $(document).ready(function(){
                     } else {
                         location.replace('user-page.html');
                     }
-                }).fail(function () {
+                }).fail(function (data) {
+                    console.log(data);
                     Alert("Error", "Login fail.");
                 })
             },

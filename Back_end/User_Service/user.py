@@ -275,6 +275,7 @@ def create_user():
             authentication = user_lib.authentication_function(str(object_id), AUTH_HOST_IP) # Get login token through Lib method
             if "token" in authentication:
                 status = user_lib.associate_role(authentication['token'], "customer", object_id, ROLE_HOST_IP)  # Save user role in Role micro server through Lib method
+                print("status"+status)
                 if (status == "Success"):
                     app.logger.info('Register: User '+str(object_id)+' register in NPP as "Customer"!');
                     return Response(json_util.dumps({'response': 'Successful operation'}),

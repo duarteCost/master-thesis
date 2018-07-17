@@ -49,7 +49,7 @@ def associate_role(token, role, user_id, ROLE_HOST_IP):
         role_authorization)  # Generation of authorization to create clients and first administrator. This is required because the role server needs to be closed
     try:
         # http communication to generate token when user does the login
-        response = requests.post('https://' + ROLE_HOST_IP + ':5005/role/'+role+'/permissions/user/' + str(user_id),
+        response = requests.post('https://' + ROLE_HOST_IP + ':5005/role/'+role+'/user/' + str(user_id),
                       headers={'Authorization': token, 'Role_authorization': role_authorization}, verify=False).content
         response_json = json.loads(response.decode("utf-8"))
         if response_json['response'] == "Role added successfully.":
