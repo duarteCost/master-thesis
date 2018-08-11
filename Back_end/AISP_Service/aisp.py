@@ -331,7 +331,6 @@ def get_my_bank_accounts(**kwargs):
                     mimetype='application/json')
 
 
-
 # This route return accounts with amount enough to the transaction
 @app.route('/aisp/payment/bank/accounts', methods=['GET'])
 @Authorization
@@ -362,9 +361,6 @@ def define_avilable_accounts(**kwargs):
     app.logger.info('/aisp/payment/bank/accounts: User ' + user_id + 'check the accounts with balance more then '+request.args.get('amount')+'!')
     return Response(json_util.dumps({'response': available_banks_accounts }), status=200,
                     mimetype='application/json')
-
-
-
 
 
 # This route return all transactions record

@@ -4,3 +4,5 @@ Werkzeug
 bson
 pymongo
 mongoengine
+requests
+flasgger

@@ -29,11 +29,12 @@ CONSUMER_KEY = config['OB']['CONSUMER_KEY']
 USERNAME = config['DB']['USERNAME']
 PASSWORD = config['DB']['PASSWORD']
 AUTHSOURCE = config['DB']['AUTHSOURCE']
+DB_HOST_IP = config['DB']['HOST_IP']
 
 # mongobd = MongoClient('localhost', 27017).User_db
 # mongobd.authenticate('Duarte', '123456')
 
-client = MongoClient('localhost',
+client = MongoClient(DB_HOST_IP,
                       username=USERNAME,
                       password=PASSWORD,
                       authSource=AUTHSOURCE,
@@ -43,9 +44,6 @@ time.sleep(5)
 
 print(mongobd_user)
 context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
-
-
-
 
 #decorator
 def Authorization(f):
@@ -387,7 +385,6 @@ def get_current_user(**kwargs):
 def obp_associate_user(**kwargs):
     payload = kwargs['payload'];  # user id
     request_params = request.form
-    print(request_params)
     if 'username' not in request_params:
         return Response(json_util.dumps({'response': 'Missing parameter: username'}), status=400,
                         mimetype='application/json')

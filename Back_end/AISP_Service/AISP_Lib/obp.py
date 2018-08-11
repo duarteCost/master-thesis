@@ -60,7 +60,7 @@ def all_accounts(DL_TOKEN):
                         mimetype='application/json')
 
     accounts = json.loads(response.decode("utf-8"))
-    #print(accounts[0])
+    print(accounts);
     res = []
     for account in accounts['accounts']:
         res.append({'our_bank': account['bank_id'], 'our_account': account['id']})
